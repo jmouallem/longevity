@@ -6,9 +6,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.models import Base
 
-# Render-style default on Unix, local default on Windows.
-default_db_path = "/var/data/longevity.db" if os.name != "nt" else "./longevity.db"
-DB_PATH = os.getenv("DB_PATH", default_db_path)
+# Slice 1 requirement default path. Override with DB_PATH when needed.
+DB_PATH = os.getenv("DB_PATH", "/var/data/longevity.db")
 
 # Ensure parent directory exists when a nested path is configured.
 db_parent = Path(DB_PATH).expanduser().resolve().parent

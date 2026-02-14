@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
@@ -45,14 +46,14 @@ class Baseline(Base):
     sleep_quality: Mapped[int] = mapped_column(Integer, nullable=False)
     motivation: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    engagement_style: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    nutrition_patterns: Mapped[str | None] = mapped_column(Text, nullable=True)
-    training_history: Mapped[str | None] = mapped_column(Text, nullable=True)
-    supplement_stack: Mapped[str | None] = mapped_column(Text, nullable=True)
-    lab_markers: Mapped[str | None] = mapped_column(Text, nullable=True)
-    fasting_practices: Mapped[str | None] = mapped_column(Text, nullable=True)
-    recovery_practices: Mapped[str | None] = mapped_column(Text, nullable=True)
-    medication_details: Mapped[str | None] = mapped_column(Text, nullable=True)
+    engagement_style: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    nutrition_patterns: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    training_history: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    supplement_stack: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    lab_markers: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    fasting_practices: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    recovery_practices: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    medication_details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -73,4 +74,3 @@ class UserAIConfig(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user: Mapped[User] = relationship("User", back_populates="ai_config")
-

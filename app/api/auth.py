@@ -1,5 +1,6 @@
 from datetime import timedelta
 from enum import Enum
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -36,7 +37,7 @@ class AIConfigInput(BaseModel):
 class SignupRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
-    ai_config: AIConfigInput | None = None
+    ai_config: Optional[AIConfigInput] = None
 
 
 class TokenResponse(BaseModel):
@@ -161,3 +162,11 @@ def get_ai_config(
         api_key_masked=masked,
     )
 
+
+@router.delete("/ai-config", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_ai_config(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> None:
+    cfg = db.query(UserAIConfig).filter(UserAIConfig.user_id == user.id).first()
+    if not cfg:
+        raise HTTPException(status_code=404, detail="AI config not found")
+    db.delete(cfg)
+    db.commit()

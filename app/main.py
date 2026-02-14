@@ -17,6 +17,10 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {"service": "The Longevity Alchemist API", "status": "ok"}
+
+
 app.include_router(auth_router)
 app.include_router(intake_router)
-

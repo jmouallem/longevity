@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, model_validator
@@ -50,14 +51,14 @@ class BaselineRequest(BaseModel):
     sleep_quality: int = Field(ge=1, le=10)
     motivation: int = Field(ge=1, le=10)
 
-    engagement_style: EngagementStyle | None = None
-    nutrition_patterns: str | None = Field(default=None, max_length=2000)
-    training_history: str | None = Field(default=None, max_length=2000)
-    supplement_stack: str | None = Field(default=None, max_length=2000)
-    lab_markers: str | None = Field(default=None, max_length=2000)
-    fasting_practices: str | None = Field(default=None, max_length=2000)
-    recovery_practices: str | None = Field(default=None, max_length=2000)
-    medication_details: str | None = Field(default=None, max_length=2000)
+    engagement_style: Optional[EngagementStyle] = None
+    nutrition_patterns: Optional[str] = Field(default=None, max_length=2000)
+    training_history: Optional[str] = Field(default=None, max_length=2000)
+    supplement_stack: Optional[str] = Field(default=None, max_length=2000)
+    lab_markers: Optional[str] = Field(default=None, max_length=2000)
+    fasting_practices: Optional[str] = Field(default=None, max_length=2000)
+    recovery_practices: Optional[str] = Field(default=None, max_length=2000)
+    medication_details: Optional[str] = Field(default=None, max_length=2000)
 
     @model_validator(mode="after")
     def validate_bp(self):
@@ -215,4 +216,3 @@ def get_baseline(
         recovery_practices=record.recovery_practices,
         medication_details=record.medication_details,
     )
-
