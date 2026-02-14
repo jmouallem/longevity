@@ -33,7 +33,7 @@ class FakeLLMClient:
         raw = (self.fixture_dir / f"{name}.json").read_text(encoding="utf-8")
         return json.loads(raw)
 
-    def generate_json(self, db: Session, user_id: int, prompt: str) -> dict:
+    def generate_json(self, db: Session, user_id: int, prompt: str, task_type: str = "reasoning") -> dict:
         if self.scenario == FakeScenario.OK_LUNCH_PLAN:
             return self._load_json("OK_LUNCH_PLAN")
         if self.scenario == FakeScenario.OK_TIRED_ANALYSIS:

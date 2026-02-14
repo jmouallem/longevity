@@ -43,3 +43,5 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Misc files
+temp.text

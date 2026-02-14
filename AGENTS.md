@@ -42,6 +42,11 @@ If documents conflict, resolve in this order:
 - No client-side secret exposure.
 - No external database for MVP.
 - Do not store meal images or audio files; store only structured outputs/transcripts where applicable.
+- Model catalogs should be fetched from provider APIs when possible, with deterministic fallback lists.
+- Support two user model profiles:
+  - reasoning profile (deep analysis/planning tasks)
+  - utility profile (routing/summarization/classification/other utility tasks)
+- Route lightweight utility tasks to the utility profile by default.
 
 ## Data and API Requirements
 - Use Pydantic models for request/response validation.

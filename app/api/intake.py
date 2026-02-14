@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.orm import Session
 
 from app.api.auth import get_current_user
-from app.db.models import Baseline, User
+from app.db.models import Baseline, User, UserAIConfig
 from app.db.session import get_db
 
 router = APIRouter(prefix="/intake", tags=["intake"])
@@ -136,12 +136,22 @@ def _disclaimer() -> str:
     return "This is coaching guidance, not medical diagnosis."
 
 
+def _require_ai_config(user: User, db: Session) -> None:
+    config = db.query(UserAIConfig).filter(UserAIConfig.user_id == user.id).first()
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Complete AI provider setup before starting intake",
+        )
+
+
 @router.post("/baseline", response_model=BaselineResponse, status_code=status.HTTP_200_OK)
 def upsert_baseline(
     payload: BaselineRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> BaselineResponse:
+    _require_ai_config(user, db)
     record = db.query(Baseline).filter(Baseline.user_id == user.id).first()
     if not record:
         record = Baseline(user_id=user.id)
