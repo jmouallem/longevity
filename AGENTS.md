@@ -16,6 +16,7 @@ Use the project slice prompts as the source of truth:
 2. Slice 2: metrics + scoring + dashboard summary
 3. Slice 3: coaching endpoint (single LLM call)
 4. Slice 4: offline AI testing harness
+5. Slice 5: GUI onboarding + initialization gate before intake
 
 When working a slice:
 - Implement only that slice's goal and acceptance criteria.

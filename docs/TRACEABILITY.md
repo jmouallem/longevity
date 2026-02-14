@@ -10,6 +10,7 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 - `codex/slice_prompt_2.md`
 - `codex/slice_prompt_3.md`
 - `codex/slice_prompt_4.md`
+- `codex/slice_prompt_5.md`
 - `docs/BUILD_ROADMAP.md`
 
 ## Status Legend
@@ -23,7 +24,7 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 | UserNeeds Section | Requirement Summary | Primary Slice/Phase | Status | Notes |
 |---|---|---|---|---|
 | 1 Vision | Structured, adaptive longevity coaching system | Slices 1-4 + Roadmap Phases 2-8 | Partial | MVP slices establish foundations; full vision requires later phases. |
-| 2 Target Audience | General + advanced users, mobile/desktop | Roadmap Phases 1, 6, 8 | Planned | Mostly product/UI scope, not yet in backend-only slices. |
+| 2 Target Audience | General + advanced users, mobile/desktop | Slice 5 + Roadmap Phases 6, 8 | Partial | Slice 5 introduces mobile-first onboarding UI; broader product UX remains roadmap scope. |
 | 3 Core Experience Principles | Scientific, data-driven, supportive, non-medical | Slices 2-3 | Partial | Tone/safety present in Slice 3; broader UX/tone adaptation in later phases. |
 | 4 Privacy & Data | Auth, isolation, server-side AI, no image/audio storage | Slice 1 + Slice 3 + guardrails | Partial | Auth and server-side AI included; media handling constraints enforced as out-of-scope in early slices. |
 | 4.1 BYOK AI Provider Config | Per-user provider/model/API key setup with secure storage and masking | Slice 1 + Slice 3 | Partial | Config is captured in auth/onboarding; coaching routes use authenticated user's provider config. |
@@ -52,6 +53,7 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
   - Metrics/scoring/dashboard API: Slice 2
   - Contextual coaching endpoint: Slice 3
   - Deterministic AI test harness: Slice 4
+  - GUI onboarding + LLM setup gate before intake: Slice 5
 
 - Checklist groups primarily mapped to later phases:
   - Full round-table agents
@@ -69,5 +71,4 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 - Priority of goals subsystem (before or after multi-agent phase).
 - Whether supplement/medication baseline fields should move into a near-term slice.
 - Minimum dashboard requirements for MVP release gate.
-
 

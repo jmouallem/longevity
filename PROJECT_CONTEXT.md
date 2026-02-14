@@ -139,6 +139,7 @@ Key directories and files:
   slice_prompt_2.md
   slice_prompt_3.md
   slice_prompt_4.md
+  slice_prompt_5.md
 
 /docs
   ARCHITECTURE.md
@@ -255,6 +256,14 @@ Update this document when:
 - Major new slices are introduced
 - Deployment context changes
 - Persistent storage structure is modified
+
+### Current Slice Snapshot
+
+- Slice 1: auth + baseline intake persistence
+- Slice 2: metrics + scoring + dashboard summary API
+- Slice 3: single-call coaching endpoint + safety + summary persistence
+- Slice 4: deterministic offline AI testing harness
+- Slice 5: GUI onboarding + initialization gate (account + LLM config before intake)
 
 
 

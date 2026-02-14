@@ -49,6 +49,13 @@
 
 This phase makes the product real.
 
+### 1.0 Onboarding GUI Initialization Gate
+- [ ] Modern onboarding UI (board/card style, mobile responsive)
+- [ ] Signup/login in GUI
+- [ ] LLM provider/model/key setup in GUI
+- [ ] Block intake start until account + LLM config are complete
+- [ ] Clear setup progress and error handling in UI
+
 ### 1.1 Baseline Intake
 - [ ] Baseline schema created
 - [ ] Intake endpoint
