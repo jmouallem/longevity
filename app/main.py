@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 
 from app.api.auth import router as auth_router
+from app.api.dashboard import router as dashboard_router
 from app.api.intake import router as intake_router
+from app.api.metrics import router as metrics_router
 from app.db.session import create_tables
 
 app = FastAPI(title="The Longevity Alchemist")
@@ -24,3 +26,5 @@ def root() -> dict[str, str]:
 
 app.include_router(auth_router)
 app.include_router(intake_router)
+app.include_router(metrics_router)
+app.include_router(dashboard_router)

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
 
 Base = declarative_base()
@@ -20,6 +20,15 @@ class User(Base):
     )
     ai_config: Mapped["UserAIConfig"] = relationship(
         "UserAIConfig", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+    metrics: Mapped[list["Metric"]] = relationship(
+        "Metric", back_populates="user", cascade="all, delete-orphan"
+    )
+    domain_scores: Mapped[list["DomainScore"]] = relationship(
+        "DomainScore", back_populates="user", cascade="all, delete-orphan"
+    )
+    composite_scores: Mapped[list["CompositeScore"]] = relationship(
+        "CompositeScore", back_populates="user", cascade="all, delete-orphan"
     )
 
 
@@ -74,3 +83,43 @@ class UserAIConfig(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user: Mapped[User] = relationship("User", back_populates="ai_config")
+
+
+class Metric(Base):
+    __tablename__ = "metrics"
+    __table_args__ = (Index("ix_metrics_user_type_taken", "user_id", "metric_type", "taken_at"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    metric_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    value_num: Mapped[float] = mapped_column(Float, nullable=False)
+    taken_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user: Mapped[User] = relationship("User", back_populates="metrics")
+
+
+class DomainScore(Base):
+    __tablename__ = "domain_scores"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    sleep_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    metabolic_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    recovery_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    behavioral_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    fitness_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    computed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    user: Mapped[User] = relationship("User", back_populates="domain_scores")
+
+
+class CompositeScore(Base):
+    __tablename__ = "composite_scores"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    longevity_score: Mapped[int] = mapped_column(Integer, nullable=False)
+    computed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    user: Mapped[User] = relationship("User", back_populates="composite_scores")
