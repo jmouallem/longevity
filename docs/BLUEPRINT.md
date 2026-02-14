@@ -88,6 +88,9 @@ POST /auth/model-options
 
 POST /intake/baseline
 GET  /intake/status
+POST /intake/conversation/start     (planned)
+POST /intake/conversation/answer    (planned)
+POST /intake/conversation/complete  (planned)
 POST /metrics
 GET  /dashboard/summary
 POST /integrations/apple-health/sync
@@ -201,6 +204,8 @@ Phase 1:
 - Post-intake success routes user back to default chat
 - Settings menu includes AI config updates and password change
 - Per-model token usage stats are persisted and exposed
+- AI-led intake coach agent asks one question at a time and adapts depth by concern
+- Conversational intake maps deterministically into baseline schema
 - Auth
 - Baseline intake
 - Adaptive intake (goal/risk/engagement)
@@ -222,5 +227,4 @@ Phase 4:
 - Modular connector interface for third-party data sync
 - Apple Health normalized metric sync (planned)
 - Hume normalized signal sync (planned)
-
 

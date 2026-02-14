@@ -34,12 +34,6 @@
       }
       .title { margin: 0; font-size: clamp(1.1rem, 2vw, 1.8rem); }
       .muted { margin: .2rem 0 0; color: var(--muted); font-size: .9rem; }
-      .menu {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: .45rem;
-        margin-bottom: .9rem;
-      }
       button {
         border: none;
         border-radius: 9px;
@@ -47,9 +41,102 @@
         font-weight: 600;
         cursor: pointer;
       }
-      .menu button { background: #e7f0f8; color: #1f4a68; border: 1px solid #c6d9e8; }
-      .menu button.active { background: #d0e6f7; border-color: #9dc9e6; }
+      .top-actions { display: flex; gap: .5rem; align-items: center; }
+      .hamburger {
+        position: relative;
+        width: 2.5rem;
+        height: 2.5rem;
+        border: 1px solid var(--border);
+        background: #f0f6fb;
+        color: #234964;
+        border-radius: 10px;
+      }
+      .hamburger .icon-bars {
+        width: 16px;
+        height: 12px;
+        display: inline-block;
+        background:
+          linear-gradient(#234964, #234964) 0 0 / 16px 2px no-repeat,
+          linear-gradient(#234964, #234964) 0 5px / 16px 2px no-repeat,
+          linear-gradient(#234964, #234964) 0 10px / 16px 2px no-repeat;
+      }
+      .alert-dot {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #d92b2b;
+        border: 1px solid #ffffff;
+        display: none;
+      }
+      .alert-dot.show { display: block; }
       .logout { background: #f0f4f8; color: #27425b; border: 1px solid var(--border); }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(9, 24, 37, .22);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .2s ease;
+        z-index: 20;
+      }
+      .overlay.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: -320px;
+        width: min(320px, 85vw);
+        height: 100vh;
+        background: linear-gradient(180deg, #f8fcff, #edf4fa);
+        border-left: 1px solid var(--border);
+        box-shadow: -14px 0 28px rgba(13, 34, 52, .18);
+        padding: .9rem;
+        z-index: 30;
+        transition: right .22s ease;
+      }
+      .drawer.open { right: 0; }
+      .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: .7rem;
+      }
+      .drawer-title {
+        margin: 0;
+        font-size: .98rem;
+        color: #244862;
+      }
+      .close-drawer {
+        width: 2rem;
+        height: 2rem;
+        border: 1px solid var(--border);
+        background: #f7fbff;
+        color: #335a76;
+      }
+      .drawer-nav {
+        display: grid;
+        gap: .5rem;
+      }
+      .nav-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        border: 1px solid #c9dcec;
+        background: #e8f2fb;
+        color: #1f4b67;
+        border-radius: 10px;
+        padding: .6rem .7rem;
+      }
+      .nav-item.active {
+        background: #d4e9f8;
+        border-color: #9dc8e4;
+      }
       .card {
         background: var(--panel);
         border: 1px solid var(--border);
@@ -99,6 +186,34 @@
         background: #f8fbff;
         padding: .7rem;
       }
+      .chat-log {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #f8fbff;
+        min-height: 180px;
+        max-height: 360px;
+        overflow-y: auto;
+        padding: .6rem;
+      }
+      .bubble {
+        max-width: 85%;
+        margin: .35rem 0;
+        padding: .5rem .65rem;
+        border-radius: 10px;
+        line-height: 1.35;
+        font-size: .9rem;
+      }
+      .bubble.coach {
+        background: #e7f1fb;
+        color: #204a66;
+        border: 1px solid #c8deef;
+      }
+      .bubble.user {
+        margin-left: auto;
+        background: #dff3e8;
+        color: #1f5f41;
+        border: 1px solid #bde0cd;
+      }
       .table {
         width: 100%;
         border-collapse: collapse;
@@ -111,10 +226,7 @@
         font-size: .86rem;
       }
       .hint { font-size: .84rem; color: var(--muted); margin-top: .3rem; }
-      @media (max-width: 900px) {
-        .menu { grid-template-columns: 1fr 1fr; }
-        .grid-2 { grid-template-columns: 1fr; }
-      }
+      @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
   </head>
   <body>
@@ -124,15 +236,27 @@
           <h1 class="title">Longevity Workspace</h1>
           <p class="muted" id="welcome">Loading session...</p>
         </div>
-        <button class="logout" id="logout">Log Out</button>
+        <div class="top-actions">
+          <button class="hamburger" id="menu-toggle" aria-label="Open menu">
+            <span class="icon-bars" aria-hidden="true"></span>
+            <span class="alert-dot" id="intake-alert-dot" aria-hidden="true"></span>
+          </button>
+          <button class="logout" id="logout">Log Out</button>
+        </div>
       </div>
-
-      <div class="menu">
-        <button id="menu-chat" class="active">Chat</button>
-        <button id="menu-intake">Intake <span id="intake-badge" class="status warn">pending</span></button>
-        <button id="menu-settings">Settings</button>
-        <button id="menu-usage">Model Usage</button>
-      </div>
+      <div class="overlay" id="menu-overlay"></div>
+      <aside class="drawer" id="menu-drawer">
+        <div class="drawer-header">
+          <h3 class="drawer-title">Workspace Menu</h3>
+          <button class="close-drawer" id="menu-close" aria-label="Close menu">x</button>
+        </div>
+        <div class="drawer-nav">
+          <button id="menu-chat" class="nav-item active"><span>Chat</span></button>
+          <button id="menu-intake" class="nav-item"><span>Intake</span><span id="intake-badge" class="status warn">pending</span></button>
+          <button id="menu-settings" class="nav-item"><span>Settings</span></button>
+          <button id="menu-usage" class="nav-item"><span>Model Usage</span></button>
+        </div>
+      </aside>
 
       <section class="card">
         <article id="view-chat" class="view active">
@@ -164,28 +288,25 @@
         </article>
 
         <article id="view-intake" class="view">
-          <h2 class="section-title">Baseline Intake</h2>
-          <p class="muted">You can complete this now, skip, or re-run later from this menu. Completing intake routes you back to chat.</p>
+          <h2 class="section-title">Intake Coach</h2>
+          <p class="muted">Complete intake through a guided coach chat. Answer naturally with your preferred units (lb/kg, in/cm, etc.).</p>
           <div class="notice" id="intake-status"></div>
-          <div class="grid-2">
-            <div class="field"><label for="goal">Primary Goal</label><select id="goal"><option value="energy">energy</option><option value="heart_health">heart health</option><option value="longevity_optimization">longevity optimization</option><option value="weight_loss">weight loss</option><option value="mental_clarity">mental clarity</option></select></div>
-            <div class="field"><label for="activity">Activity Level</label><select id="activity"><option value="sedentary">sedentary</option><option value="light">light</option><option value="moderate" selected>moderate</option><option value="high">high</option><option value="athlete">athlete</option></select></div>
-            <div class="field"><label for="weight">Weight (kg)</label><input id="weight" type="number" step="0.1" value="80" /></div>
-            <div class="field"><label for="waist">Waist (cm)</label><input id="waist" type="number" step="0.1" value="92" /></div>
-            <div class="field"><label for="sbp">Systolic BP</label><input id="sbp" type="number" value="122" /></div>
-            <div class="field"><label for="dbp">Diastolic BP</label><input id="dbp" type="number" value="79" /></div>
-            <div class="field"><label for="rhr">Resting HR</label><input id="rhr" type="number" value="61" /></div>
-            <div class="field"><label for="sleep">Sleep Hours</label><input id="sleep" type="number" step="0.1" value="7.2" /></div>
-            <div class="field"><label for="energy">Energy (1-10)</label><input id="energy" type="number" min="1" max="10" value="7" /></div>
-            <div class="field"><label for="mood">Mood (1-10)</label><input id="mood" type="number" min="1" max="10" value="7" /></div>
-            <div class="field"><label for="stress">Stress (1-10)</label><input id="stress" type="number" min="1" max="10" value="4" /></div>
-            <div class="field"><label for="sleep-quality">Sleep Quality (1-10)</label><input id="sleep-quality" type="number" min="1" max="10" value="7" /></div>
-            <div class="field"><label for="motivation">Motivation (1-10)</label><input id="motivation" type="number" min="1" max="10" value="8" /></div>
-            <div class="field"><label for="engagement">Engagement Style</label><select id="engagement"><option value="">(optional)</option><option value="concise">concise</option><option value="detailed">detailed</option><option value="playful">playful</option><option value="serious">serious</option></select></div>
+          <div class="field">
+            <label for="intake-top-goals">Top Goals (optional starter)</label>
+            <input id="intake-top-goals" type="text" placeholder="energy, sleep, weight loss" />
           </div>
           <div class="row">
-            <button class="btn-primary" id="intake-save">Save / Update Intake</button>
+            <button class="btn-primary" id="intake-start">Start / Resume Intake Coach</button>
             <button class="btn-ghost" id="intake-refresh">Refresh Status</button>
+          </div>
+          <div class="field"><label>Coach Chat</label><div id="intake-chat-log" class="chat-log"></div></div>
+          <div class="field">
+            <label for="intake-answer">Your Answer</label>
+            <textarea id="intake-answer" placeholder="Type answer for current intake question"></textarea>
+          </div>
+          <div class="row">
+            <button class="btn-primary" id="intake-answer-send">Send Answer</button>
+            <button class="btn-ghost" id="intake-complete" style="display:none;">Finalize Intake</button>
           </div>
           <div class="notice" id="intake-notice"></div>
         </article>
@@ -233,6 +354,8 @@
 
       const el = (id) => document.getElementById(id);
       const views = ["chat", "intake", "settings", "usage"];
+      const intakeState = { sessionId: null, readyToComplete: false };
+      const intakeChat = [];
 
       function authHeaders() {
         return { "Authorization": "Bearer " + token, "Content-Type": "application/json" };
@@ -244,11 +367,41 @@
         node.className = "notice" + (kind ? " " + kind : "");
       }
 
+      function addIntakeChatMessage(role, text) {
+        if (!text) return;
+        intakeChat.push({ role, text });
+        const log = el("intake-chat-log");
+        const bubble = document.createElement("div");
+        bubble.className = "bubble " + role;
+        bubble.textContent = text;
+        log.appendChild(bubble);
+        log.scrollTop = log.scrollHeight;
+      }
+
       function showView(name) {
         views.forEach((v) => {
           el("view-" + v).classList.toggle("active", v === name);
           el("menu-" + v).classList.toggle("active", v === name);
         });
+        closeDrawer();
+      }
+
+      function openDrawer() {
+        el("menu-drawer").classList.add("open");
+        el("menu-overlay").classList.add("open");
+      }
+
+      function closeDrawer() {
+        el("menu-drawer").classList.remove("open");
+        el("menu-overlay").classList.remove("open");
+      }
+
+      function toggleDrawer() {
+        if (el("menu-drawer").classList.contains("open")) {
+          closeDrawer();
+        } else {
+          openDrawer();
+        }
       }
 
       async function loadSession() {
@@ -354,43 +507,92 @@
         if (body.baseline_completed) {
           el("intake-badge").textContent = "completed";
           el("intake-badge").className = "status ok";
+          el("intake-alert-dot").classList.remove("show");
           setNotice("intake-status", "Intake completed. You can update it anytime from this menu.", "ok");
         } else {
           el("intake-badge").textContent = "pending";
           el("intake-badge").className = "status warn";
+          el("intake-alert-dot").classList.add("show");
           setNotice("intake-status", "Intake not completed yet. You can skip for now and run later from this menu.", "warn");
         }
       }
 
-      async function submitIntake() {
-        const payload = {
-          primary_goal: el("goal").value,
-          weight: Number(el("weight").value),
-          waist: Number(el("waist").value),
-          systolic_bp: Number(el("sbp").value),
-          diastolic_bp: Number(el("dbp").value),
-          resting_hr: Number(el("rhr").value),
-          sleep_hours: Number(el("sleep").value),
-          activity_level: el("activity").value,
-          energy: Number(el("energy").value),
-          mood: Number(el("mood").value),
-          stress: Number(el("stress").value),
-          sleep_quality: Number(el("sleep-quality").value),
-          motivation: Number(el("motivation").value),
-          engagement_style: el("engagement").value || null
-        };
-        setNotice("intake-notice", "Saving intake...", "");
-        const res = await fetch("/intake/baseline", {
+      function renderCoachState(payload) {
+        intakeState.sessionId = payload.session_id;
+        intakeState.readyToComplete = !!payload.ready_to_complete;
+        const question = (payload.coach_message || "").trim();
+        if (question) addIntakeChatMessage("coach", question);
+        el("intake-complete").style.display = intakeState.readyToComplete ? "inline-block" : "none";
+      }
+
+      async function startIntakeConversation() {
+        const topGoalsRaw = el("intake-top-goals").value.trim();
+        const goals = topGoalsRaw
+          ? topGoalsRaw.split(",").map((g) => g.trim()).filter((g) => g).slice(0, 3)
+          : [];
+        setNotice("intake-notice", "Starting intake coach...", "");
+        const res = await fetch("/intake/conversation/start", {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ top_goals: goals.length ? goals : null })
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          setNotice("intake-notice", body.detail || "Failed to save intake.", "error");
+          setNotice("intake-notice", body.detail || "Could not start intake coach.", "error");
           return;
         }
-        setNotice("intake-notice", "Intake saved. Redirecting to default chat.", "ok");
+        el("intake-chat-log").innerHTML = "";
+        intakeChat.length = 0;
+        renderCoachState(await res.json());
+        setNotice("intake-notice", "Coach started. Answer the current question.", "ok");
+      }
+
+      async function sendIntakeAnswer() {
+        const answer = el("intake-answer").value.trim();
+        if (!intakeState.sessionId) {
+          setNotice("intake-notice", "Start intake coach first.", "warn");
+          return;
+        }
+        if (!answer) {
+          setNotice("intake-notice", "Enter an answer first.", "error");
+          return;
+        }
+        addIntakeChatMessage("user", answer);
+        setNotice("intake-notice", "Sending answer...", "");
+        const res = await fetch("/intake/conversation/answer", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ session_id: intakeState.sessionId, answer })
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("intake-notice", body.detail || "Could not submit answer.", "error");
+          return;
+        }
+        el("intake-answer").value = "";
+        renderCoachState(await res.json());
+        setNotice("intake-notice", intakeState.readyToComplete ? "Ready to finalize intake." : "Answer recorded. Next question loaded.", "ok");
+      }
+
+      async function finalizeIntakeConversation() {
+        if (!intakeState.sessionId) {
+          setNotice("intake-notice", "Start intake coach first.", "warn");
+          return;
+        }
+        setNotice("intake-notice", "Finalizing intake...", "");
+        const res = await fetch("/intake/conversation/complete", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ session_id: intakeState.sessionId })
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("intake-notice", body.detail || "Could not finalize intake.", "error");
+          return;
+        }
+        intakeState.readyToComplete = false;
+        el("intake-complete").style.display = "none";
+        setNotice("intake-notice", "Intake complete. Redirecting to default chat.", "ok");
         await loadIntakeStatus();
         showView("chat");
       }
@@ -476,7 +678,9 @@
       el("logout").addEventListener("click", () => { sessionStorage.removeItem("access_token"); window.location.href = "/onboarding"; });
       el("chat-send").addEventListener("click", sendChat);
       el("chat-clear").addEventListener("click", () => { el("chat-question").value = ""; setNotice("chat-notice", "", ""); });
-      el("intake-save").addEventListener("click", submitIntake);
+      el("intake-start").addEventListener("click", startIntakeConversation);
+      el("intake-answer-send").addEventListener("click", sendIntakeAnswer);
+      el("intake-complete").addEventListener("click", finalizeIntakeConversation);
       el("intake-refresh").addEventListener("click", loadIntakeStatus);
       el("ai-load").addEventListener("click", loadAiConfig);
       el("provider").addEventListener("change", loadModelOptions);
@@ -484,14 +688,22 @@
       el("ai-save").addEventListener("click", saveAiConfig);
       el("password-save").addEventListener("click", changePassword);
       el("usage-refresh").addEventListener("click", loadUsage);
+      el("menu-toggle").addEventListener("click", toggleDrawer);
+      el("menu-close").addEventListener("click", closeDrawer);
+      el("menu-overlay").addEventListener("click", closeDrawer);
 
       document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeDrawer();
+          return;
+        }
         if (event.key !== "Enter") return;
         const target = event.target;
         if (target && target.tagName === "TEXTAREA") {
           if (event.shiftKey) return;
           event.preventDefault();
           if (el("view-chat").classList.contains("active")) sendChat();
+          if (el("view-intake").classList.contains("active")) sendIntakeAnswer();
           return;
         }
         if (event.shiftKey) return;
@@ -513,3 +725,6 @@
     </script>
   </body>
 </html>
+
+
+

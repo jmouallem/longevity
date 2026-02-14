@@ -78,6 +78,16 @@ This phase makes the product real.
 - [ ] Intake completion status is visible in workspace menu
 - [ ] Intake completion routes user to default chat view
 
+### 1.1.2 AI-Led Intake Coach (Next)
+- [ ] Introduce dedicated intake coach agent workflow
+- [ ] Intake asks one question at a time
+- [ ] Start intake by collecting top goals (top 3 supported)
+- [ ] Capture age/sex plus baseline vitals conversationally
+- [ ] Risk signals trigger deeper concern probing
+- [ ] Goal priorities trigger deeper domain probing
+- [ ] Map conversational responses to deterministic structured baseline fields
+- [ ] Keep transcript storage bounded (summary + structured data, not full transcript)
+
 ### 1.1.1 Main Workspace + Settings
 - [ ] Main workspace menu with one-view-at-a-time navigation
 - [ ] Chat, Intake, Settings, and Usage views are available

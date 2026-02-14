@@ -94,6 +94,7 @@ Responsibilities:
 - Intake status + baseline upsert endpoints
 - Settings endpoints (AI config, password change)
 - Model usage stats endpoint
+- Intake coach orchestration endpoints (planned)
 - Score calculation
 - Experiment lifecycle logic
 
@@ -126,6 +127,17 @@ Responsibilities:
 - Provide fallback model lists when provider lookup fails
 - Return best-default model candidate for each profile slot
 - Return per-model cost metadata when known
+
+---
+
+### 4.6 Intake Coach Agent (Planned)
+
+Responsibilities:
+- Run a guided conversational intake interview
+- Ask one question at a time and adapt depth by user goals + risk signals
+- Probe deeper where concern flags are detected
+- Extract and map answers into deterministic baseline fields
+- Produce concise intake summary and focus priorities without storing full transcript
 
 ---
 

@@ -18,6 +18,7 @@ Use the project slice prompts as the source of truth:
 4. Slice 4: offline AI testing harness
 5. Slice 5: GUI onboarding + initialization gate before intake
 6. Slice 6: skippable/re-runnable intake from main workspace + settings menu + token usage stats
+7. Slice 7: AI-led conversational intake coach agent with adaptive probing and deterministic baseline mapping
 
 When working a slice:
 - Implement only that slice's goal and acceptance criteria.

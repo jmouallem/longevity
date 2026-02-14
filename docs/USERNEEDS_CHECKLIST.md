@@ -84,12 +84,17 @@
 
 ## Adaptive Intake Experience
 - [ ] Intake starts with a goal-identification question
+- [ ] Intake coach asks for user's top goals first (top 3 supported)
+- [ ] Intake coach gathers early profile context (age, sex, weight, BP, sleep, stress)
+- [ ] Intake runs one question at a time with adaptive follow-up prompts
 - [ ] Goal-based adaptive depth is applied
 - [ ] Risk-based clarifying prompts trigger for high-risk baseline values
 - [ ] Engagement style adaptation works (concise vs deep)
 - [ ] Intake tone starts neutral/professional and adapts safely
 - [ ] Required structured core is always captured
 - [ ] Optional modules remain optional and goal-triggered
+- [ ] Intake coach probes deeper in concern areas
+- [ ] Conversational answers are mapped to deterministic structured baseline fields
 - [ ] Motivational framing is shown before completion
 - [ ] Data-use transparency and non-diagnostic boundary are shown
 - [ ] Intake completion summary is generated

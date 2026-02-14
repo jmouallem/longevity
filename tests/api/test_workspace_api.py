@@ -24,9 +24,11 @@ def test_workspace_page_contract(client) -> None:
     assert response.status_code == 200
     html = response.text
     assert "Longevity Workspace" in html
-    assert "Baseline Intake" in html
+    assert "Intake Coach" in html
     assert "Default Chat" in html
     assert "Model Token Usage" in html
+    assert "intake-alert-dot" in html
+    assert "preferred units" in html
 
 
 def test_intake_status_lifecycle(client, auth_token) -> None:
@@ -76,3 +78,90 @@ def test_model_usage_endpoint_returns_rows(client, auth_token) -> None:
     assert usage.status_code == 200
     items = usage.json()["items"]
     assert isinstance(items, list)
+
+
+def test_intake_conversation_flow(client, auth_token) -> None:
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    start = client.post("/intake/conversation/start", headers=headers, json={"top_goals": ["More energy", "Sleep"]})
+    assert start.status_code == 200
+    session_id = start.json()["session_id"]
+
+    # Drive required fields to completion.
+    answers = [
+        "42",
+        "male",
+        "80",
+        "92",
+        "122",
+        "79",
+        "61",
+        "7.2",
+        "moderate",
+        "7",
+        "7",
+        "4",
+        "7",
+        "8",
+        "No additional context",
+    ]
+    last = None
+    for answer in answers:
+        last = client.post(
+            "/intake/conversation/answer",
+            headers=headers,
+            json={"session_id": session_id, "answer": answer},
+        )
+        assert last.status_code == 200
+    assert last is not None
+    assert last.json()["ready_to_complete"] is True
+
+    complete = client.post(
+        "/intake/conversation/complete",
+        headers=headers,
+        json={"session_id": session_id},
+    )
+    assert complete.status_code == 200
+    body = complete.json()
+    assert body["baseline_id"] > 0
+    assert body["primary_goal"] == "More energy"
+
+
+def test_intake_conversation_accepts_mixed_units(client, auth_token) -> None:
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    start = client.post("/intake/conversation/start", headers=headers, json={"top_goals": ["fat loss", "better sleep"]})
+    assert start.status_code == 200
+    session_id = start.json()["session_id"]
+
+    # age, sex, weight(lbs), waist(in), BP as 120/80, resting hr, sleep in h/m, activity and scales.
+    answers = [
+        "37",
+        "female",
+        "185 lbs",
+        "34 inches",
+        "120/80",
+        "63 bpm",
+        "7h 30m",
+        "light activity",
+        "6/10",
+        "7",
+        "8",
+        "6",
+        "7",
+        "no more",
+    ]
+    for answer in answers:
+        step = client.post(
+            "/intake/conversation/answer",
+            headers=headers,
+            json={"session_id": session_id, "answer": answer},
+        )
+        assert step.status_code == 200
+
+    complete = client.post("/intake/conversation/complete", headers=headers, json={"session_id": session_id})
+    assert complete.status_code == 200
+    baseline = client.get("/intake/baseline", headers=headers)
+    assert baseline.status_code == 200
+    body = baseline.json()
+    # Converted and normalized values:
+    assert body["activity_level"] == "light"
+    assert body["sleep_hours"] >= 7.4

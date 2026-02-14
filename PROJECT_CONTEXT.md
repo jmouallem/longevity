@@ -34,6 +34,7 @@ Its purpose is to capture essential, relatively static project context to ensure
 - Structured baseline data collection and storage
 - Main workspace UI with menu-based Chat/Intake/Settings/Usage views
 - Skippable and re-runnable intake lifecycle from workspace menu
+- Planned AI-led conversational intake coach agent for one-question-at-a-time baseline capture
 - Future: conversational/multimodal intake mode (while retaining structured storage)
 - Adaptive intake with goal/risk/engagement-based questioning and tone
 - Future: modular external data connectors (Apple Health, Hume) with normalized sync into internal datasets
@@ -154,6 +155,7 @@ Key directories and files:
   slice_prompt_4.md
   slice_prompt_5.md
   slice_prompt_6.md
+  slice_prompt_7.md
 
 /docs
   ARCHITECTURE.md
@@ -279,6 +281,7 @@ Update this document when:
 - Slice 4: deterministic offline AI testing harness
 - Slice 5: GUI onboarding + initialization gate (account + LLM config before intake)
 - Slice 6: workspace menu + optional/re-runnable intake + settings + model token usage stats
+- Slice 7 (planned): AI-led intake coach interview + concern-driven probing + structured baseline mapping
 
 
 

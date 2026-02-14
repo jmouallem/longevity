@@ -43,6 +43,10 @@ class Baseline(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
 
     primary_goal: Mapped[str] = mapped_column(String(64), nullable=False)
+    top_goals_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    goal_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    age_years: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    sex_at_birth: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
 
     weight: Mapped[float] = mapped_column(Float, nullable=False)
     waist: Mapped[float] = mapped_column(Float, nullable=False)
@@ -162,3 +166,20 @@ class ModelUsageStat(Base):
     completion_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     total_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_used_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class IntakeConversationSession(Base):
+    __tablename__ = "intake_conversation_sessions"
+    __table_args__ = (
+        Index("ix_intake_conv_user_updated", "user_id", "updated_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+    current_step: Mapped[str] = mapped_column(String(64), nullable=False)
+    answers_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    concern_flags_csv: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    coach_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

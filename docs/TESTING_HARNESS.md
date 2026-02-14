@@ -227,6 +227,8 @@ Assert these, not quality:
 - Reasoning task class uses reasoning model profile by default
 - Intake status endpoint correctly reflects baseline completion
 - Workspace settings endpoints (password change) enforce auth and validation
+- Intake coach asks one question at a time and advances deterministically
+- Risk/concern flags trigger deeper follow-up questions in intake flow
 
 ---
 

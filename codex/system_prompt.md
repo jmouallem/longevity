@@ -11,6 +11,7 @@ The canonical slice instructions live in:
 - `codex/slice_prompt_4.md`
 - `codex/slice_prompt_5.md`
 - `codex/slice_prompt_6.md`
+- `codex/slice_prompt_7.md`
 
 ## Load Order
 Use this load order to keep context tight and deterministic:

@@ -25,10 +25,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def configure_database(db_path: str) -> None:
-    global DB_PATH, engine, SessionLocal
+    global DB_PATH, engine
     DB_PATH = db_path
     engine = _build_engine(DB_PATH)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    SessionLocal.configure(bind=engine)
 
 
 def create_tables() -> None:
@@ -53,6 +53,16 @@ def create_tables() -> None:
         if "ai_utility_model" not in columns:
             conn.execute(text("ALTER TABLE user_ai_configs ADD COLUMN ai_utility_model VARCHAR(128)"))
             conn.execute(text("UPDATE user_ai_configs SET ai_utility_model = ai_model WHERE ai_utility_model IS NULL"))
+
+        baseline_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(baselines)")).fetchall()}
+        if "top_goals_json" not in baseline_columns:
+            conn.execute(text("ALTER TABLE baselines ADD COLUMN top_goals_json TEXT"))
+        if "goal_notes" not in baseline_columns:
+            conn.execute(text("ALTER TABLE baselines ADD COLUMN goal_notes TEXT"))
+        if "age_years" not in baseline_columns:
+            conn.execute(text("ALTER TABLE baselines ADD COLUMN age_years INTEGER"))
+        if "sex_at_birth" not in baseline_columns:
+            conn.execute(text("ALTER TABLE baselines ADD COLUMN sex_at_birth VARCHAR(32)"))
 
 
 def get_db():

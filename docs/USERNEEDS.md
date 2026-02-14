@@ -223,6 +223,19 @@ Optional adaptive modules (goal-triggered):
 - Sauna/cold exposure
 - Medication details
 
+### 5.7.1 AI-Led Intake Coach Agent
+
+The intake should be conducted as a guided conversation by a dedicated intake coach agent.
+
+Requirements:
+- Intake starts with a coach-led opener and asks for top goals first (for example: top 3 goals).
+- Intake coach should gather key profile context early (for example: age, sex, weight, blood pressure, sleep, stress).
+- The coach must ask one question at a time, then adapt the next question from user response.
+- The coach must probe deeper in concern areas (risk signals or user-prioritized pain points).
+- The coach must remain supportive, neutral-professional first, and avoid interrogative tone.
+- The coach must map conversational answers into deterministic structured fields required by baseline schema.
+- The system should avoid persisting full free-form intake transcript long term; store structured output and concise summaries only.
+
 ### 5.8 Motivational + Transparency Requirements
 
 Before intake completion, the system must:
@@ -259,6 +272,7 @@ Adaptive intake is considered complete when:
 - Goal-based adaptive questioning triggered
 - Tone adapts safely to user engagement
 - Risk-based clarifications triggered when needed
+- Intake coach asked one-question-at-a-time and adapted follow-up depth by concern
 - Intake summary generated
 - User feels guided, not interrogated
 - Structured data stored deterministically
@@ -501,4 +515,3 @@ UI must be:
 It is:
 
 A structured, adaptive longevity coaching system grounded in measurable data, guided experimentation, and multidisciplinary reasoning.
-
