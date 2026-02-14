@@ -30,6 +30,9 @@ class User(Base):
     composite_scores: Mapped[list["CompositeScore"]] = relationship(
         "CompositeScore", back_populates="user", cascade="all, delete-orphan"
     )
+    conversation_summaries: Mapped[list["ConversationSummary"]] = relationship(
+        "ConversationSummary", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Baseline(Base):
@@ -123,3 +126,18 @@ class CompositeScore(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
     user: Mapped[User] = relationship("User", back_populates="composite_scores")
+
+
+class ConversationSummary(Base):
+    __tablename__ = "conversation_summaries"
+    __table_args__ = (Index("ix_conv_summary_user_created", "user_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    question: Mapped[str] = mapped_column(String(512), nullable=False)
+    answer_summary: Mapped[str] = mapped_column(String(1024), nullable=False)
+    tags: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    safety_flags: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+
+    user: Mapped[User] = relationship("User", back_populates="conversation_summaries")
