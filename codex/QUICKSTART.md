@@ -20,6 +20,9 @@ Start fast with minimal context while preserving slice discipline.
 - Keep diffs bounded and focused.
 - Avoid network calls in AI tests (mock/fake LLM).
 - Keep API contracts explicit and stable.
+- For onboarding/model work: prefer dynamic provider model lookup with deterministic fallback lists.
+- Keep deep-thinker, reasoning, and utility model profiles explicit in contracts and tests.
+- For model selectors, expose per-model cost metadata when known.
 
 ## Output Checklist
 - What changed

@@ -81,6 +81,7 @@ POST /auth/signup
 POST /auth/login
 PUT  /auth/ai-config
 GET  /auth/ai-config
+POST /auth/model-options
 
 POST /intake/baseline
 POST /metrics
@@ -183,6 +184,14 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
 
 Phase 1:
 - Per-user provider configuration (OpenAI/Gemini) + encrypted BYOK storage
+- Dynamic model options lookup endpoint with fallback model lists
+- Triple model profiles in config:
+  - deep thinker model
+  - reasoning model
+  - utility model
+- Deep-think submission toggle routes to deep thinker model
+- Model options include cost metadata when known
+- Utility-task routing defaults to utility model
 - Auth
 - Baseline intake
 - Adaptive intake (goal/risk/engagement)
@@ -204,8 +213,6 @@ Phase 4:
 - Modular connector interface for third-party data sync
 - Apple Health normalized metric sync (planned)
 - Hume normalized signal sync (planned)
-
-
 
 
 

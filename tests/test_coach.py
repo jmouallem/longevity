@@ -15,7 +15,18 @@ from app.main import app  # noqa: E402
 def _signup_and_login(client: TestClient) -> str:
     email = f"slice3_{uuid4().hex[:8]}@test.com"
     password = "StrongPass123"
-    signup = client.post("/auth/signup", json={"email": email, "password": password})
+    signup = client.post(
+        "/auth/signup",
+        json={
+            "email": email,
+            "password": password,
+            "ai_config": {
+                "ai_provider": "openai",
+                "ai_model": "gpt-4.1-mini",
+                "ai_api_key": "sk-test-12345678",
+            },
+        },
+    )
     assert signup.status_code == 201
     login = client.post("/auth/login", data={"username": email, "password": password})
     assert login.status_code == 200
@@ -141,3 +152,32 @@ def test_coach_json_parse_failure_fallback(monkeypatch) -> None:
         body = response.json()
         assert body["safety_flags"] == ["llm_unavailable"]
         assert len(body["suggested_questions"]) >= 3
+
+
+def test_coach_deep_think_flag_routes_request(monkeypatch) -> None:
+    with TestClient(app) as client:
+        token = _signup_and_login(client)
+        headers = {"Authorization": f"Bearer {token}"}
+        baseline = client.post("/intake/baseline", headers=headers, json=_baseline_payload())
+        assert baseline.status_code == 200
+
+        called = {"deep_think": None}
+
+        def fake_llm_router(*args, **kwargs):
+            called["deep_think"] = kwargs.get("deep_think")
+            return {
+                "answer": "Deep-think response.",
+                "rationale_bullets": ["a", "b", "c"],
+                "recommended_actions": [{"title": "One step", "steps": ["Do this now"]}],
+                "suggested_questions": ["Q1", "Q2", "Q3"],
+                "safety_flags": [],
+            }
+
+        monkeypatch.setattr("app.api.coach.request_coaching_json", fake_llm_router)
+        response = client.post(
+            "/coach/question",
+            headers=headers,
+            json={"question": "Help me plan deeply.", "mode": "deep", "deep_think": True},
+        )
+        assert response.status_code == 200
+        assert called["deep_think"] is True

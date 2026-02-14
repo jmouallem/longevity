@@ -53,6 +53,12 @@ This phase makes the product real.
 - [ ] Modern onboarding UI (board/card style, mobile responsive)
 - [ ] Signup/login in GUI
 - [ ] LLM provider/model/key setup in GUI
+- [ ] Dynamic model list lookup from provider API
+- [ ] Deep thinker + reasoning + utility model slots in setup UI
+- [ ] Manual deep-think toggle on coaching submissions
+- [ ] Model option list includes cost metadata when known
+- [ ] Utility-task routing defaults to utility model profile
+- [ ] Deep-think submissions route to deep thinker profile
 - [ ] Block intake start until account + LLM config are complete
 - [ ] Clear setup progress and error handling in UI
 
@@ -77,6 +83,7 @@ This phase makes the product real.
 - [ ] `/coach/question` endpoint
 - [ ] Load user state
 - [ ] Call LLM once (single agent mode) using authenticated user's provider/model config
+- [ ] Route utility sub-tasks (summarization/routing/extraction) to utility model profile
 - [ ] Return contextual response
 - [ ] Save conversation summary
 

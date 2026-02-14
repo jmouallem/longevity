@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.models import Base
@@ -33,6 +33,26 @@ def configure_database(db_path: str) -> None:
 
 def create_tables() -> None:
     Base.metadata.create_all(bind=engine)
+    # Lightweight forward-compatible column upgrades for SQLite without full migrations.
+    with engine.begin() as conn:
+        columns = {
+            row[1] for row in conn.execute(text("PRAGMA table_info(user_ai_configs)")).fetchall()
+        }
+        if "ai_reasoning_model" not in columns:
+            conn.execute(text("ALTER TABLE user_ai_configs ADD COLUMN ai_reasoning_model VARCHAR(128)"))
+            conn.execute(text("UPDATE user_ai_configs SET ai_reasoning_model = ai_model WHERE ai_reasoning_model IS NULL"))
+        if "ai_deep_thinker_model" not in columns:
+            conn.execute(text("ALTER TABLE user_ai_configs ADD COLUMN ai_deep_thinker_model VARCHAR(128)"))
+            conn.execute(
+                text(
+                    "UPDATE user_ai_configs "
+                    "SET ai_deep_thinker_model = ai_model "
+                    "WHERE ai_deep_thinker_model IS NULL"
+                )
+            )
+        if "ai_utility_model" not in columns:
+            conn.execute(text("ALTER TABLE user_ai_configs ADD COLUMN ai_utility_model VARCHAR(128)"))
+            conn.execute(text("UPDATE user_ai_configs SET ai_utility_model = ai_model WHERE ai_utility_model IS NULL"))
 
 
 def get_db():

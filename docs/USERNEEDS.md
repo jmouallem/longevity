@@ -80,6 +80,24 @@ Requirements:
 - User can rotate or revoke their key
 - Coaching calls use the authenticated user's selected provider/model when configured
 - If user key is missing/invalid, system returns clear remediation guidance
+- User can load model options dynamically from provider APIs after authentication
+- System provides a safe fallback model list per provider if dynamic lookup fails
+
+### 4.3 Triple Model Profiles + Dynamic Model Catalog
+
+The system must support three user-configurable model profiles:
+- **Deep thinker model** for manually-invoked high-depth analysis during a coaching submission
+- **Reasoning model** for default planning/analysis/coaching reasoning
+- **Utility model** for routing, summarization, extraction, and other lightweight utility tasks
+
+Requirements:
+- Model lists should be fetched dynamically from provider APIs when possible
+- A deterministic fallback model list must exist per provider
+- UI must preselect the best default model from available options
+- UI should show model cost metadata when available
+- Deep thinker routing must be explicit and opt-in per submission
+- Utility tasks must default to the utility model profile
+- Routing rules must be explicit and testable (no hidden model switching)
 
 ### 4.2 External Data Connector Architecture (Future, Modular)
 
@@ -462,8 +480,5 @@ UI must be:
 It is:
 
 A structured, adaptive longevity coaching system grounded in measurable data, guided experimentation, and multidisciplinary reasoning.
-
-
-
 
 

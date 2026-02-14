@@ -81,6 +81,9 @@ class UserAIConfig(Base):
 
     ai_provider: Mapped[str] = mapped_column(String(32), nullable=False)
     ai_model: Mapped[str] = mapped_column(String(128), nullable=False)
+    ai_reasoning_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    ai_deep_thinker_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    ai_utility_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     encrypted_api_key: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

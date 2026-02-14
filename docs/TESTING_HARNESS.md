@@ -162,6 +162,9 @@ Use FastAPI TestClient.
 - LLM OK returns response with required fields
 - LLM malformed JSON returns fallback response (still valid shape)
 - safety flags override LLM (escalation path)
+- model catalog endpoint returns provider models or fallback list deterministically
+- best default model is selected from available model list
+- task router selects utility model for summarization/routing/extraction tasks
 
 ---
 
@@ -219,6 +222,9 @@ Assert these, not quality:
 - DB writes occur as expected (summaries stored)
 - Score calculation deterministic
 - No PII leakage beyond intended fields
+- Utility task class uses utility model profile by default
+- Deep-think task class uses deep thinker model profile by default
+- Reasoning task class uses reasoning model profile by default
 
 ---
 

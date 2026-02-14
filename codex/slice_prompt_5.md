@@ -17,7 +17,7 @@ This slice must provide:
 1) a modern, card/board-style onboarding UI (Trello-like visual direction),
 2) responsive mobile-first behavior,
 3) account creation/login flow in the GUI,
-4) mandatory LLM provider/model/API key configuration in the GUI,
+4) mandatory LLM provider + deep thinker model + reasoning model + utility model + API key configuration in the GUI,
 5) gating so intake cannot start until user account and LLM config are complete.
 
 Intake is NOT started in this slice.
@@ -48,7 +48,11 @@ Step 1: Create account or log in
 
 Step 2: Configure LLM
 - provider selector: `openai` | `gemini`
-- model input/select
+- dynamic model list loaded from provider API when possible
+- deep thinker model selector
+- reasoning model selector
+- utility model selector
+- model costs visible per option when known
 - API key input
 - submit to existing backend auth config endpoint
 
@@ -75,6 +79,7 @@ Use current backend APIs only:
 - `POST /auth/login`
 - `PUT /auth/ai-config`
 - `GET /auth/ai-config` (to verify setup state when needed)
+- `POST /auth/model-options` (for dynamic provider model lists + best-default selection)
 
 No new coaching/intake logic in this slice.
 Only wiring for auth and LLM setup.
@@ -85,7 +90,9 @@ Required client-side and server-side aligned validation:
 - email format
 - password minimum requirements
 - provider required
-- model required
+- deep thinker model required
+- reasoning model required
+- utility model required
 - API key required
 
 Required UX behavior:

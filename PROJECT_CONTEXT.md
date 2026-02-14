@@ -29,6 +29,8 @@ Its purpose is to capture essential, relatively static project context to ensure
 
 - User onboarding and authentication
 - Per-user AI provider/model/key configuration (BYOK)
+- Dynamic model catalog lookup from provider APIs (with fallback lists)
+- Per-user triple model profiles (deep thinker + reasoning + utility) with deterministic routing
 - Structured baseline data collection and storage
 - Future: conversational/multimodal intake mode (while retaining structured storage)
 - Adaptive intake with goal/risk/engagement-based questioning and tone
@@ -83,6 +85,14 @@ The repository includes the following core documents:
 - All LLM calls occur server-side
 - User can select provider/model and supply their own API key
 - Minimum provider support: OpenAI (ChatGPT) and Gemini
+- Model options can be discovered from provider APIs after auth (fallback lists must exist)
+- User config supports three model slots:
+  - deep thinker model (manual high-depth submission path)
+  - reasoning model (default analysis/planning)
+  - utility model (routing/summarization/classification/tasks)
+- Utility tasks should default to the utility model route
+- Deep-think submissions should route to the deep-thinker model
+- Model selectors should show cost metadata when available
 - External LLM APIs permitted for coaching
 - Strict structured JSON responses with fallback logic required
 

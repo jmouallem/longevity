@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Protocol
+from typing import Any, Protocol, Tuple
 
 import httpx
 from sqlalchemy.orm import Session
@@ -31,13 +31,38 @@ def parse_llm_json(raw_text: str) -> dict[str, Any]:
     raise ValueError("Invalid JSON response from LLM")
 
 
-def _resolve_model_config(db: Session, user_id: int) -> tuple[str, str, str]:
+UTILITY_TASK_TYPES = {
+    "utility",
+    "summarization",
+    "routing",
+    "classification",
+    "extraction",
+}
+
+DEEP_THINK_TASK_TYPES = {
+    "deep_think",
+    "deep_thinker",
+}
+
+
+def _resolve_model_config(db: Session, user_id: int) -> Tuple[str, str, str, str, str]:
     cfg = db.query(UserAIConfig).filter(UserAIConfig.user_id == user_id).first()
     if cfg:
-        return cfg.ai_provider, cfg.ai_model, decrypt_api_key(cfg.encrypted_api_key)
+        reasoning_model = cfg.ai_reasoning_model or cfg.ai_model
+        deep_thinker_model = cfg.ai_deep_thinker_model or reasoning_model
+        utility_model = cfg.ai_utility_model or cfg.ai_model
+        return (
+            cfg.ai_provider,
+            reasoning_model,
+            deep_thinker_model,
+            utility_model,
+            decrypt_api_key(cfg.encrypted_api_key),
+        )
 
     provider = os.getenv("DEFAULT_AI_PROVIDER", "").strip().lower()
-    model = os.getenv("DEFAULT_AI_MODEL", "").strip()
+    reasoning_model = os.getenv("DEFAULT_REASONING_MODEL", "").strip() or os.getenv("DEFAULT_AI_MODEL", "").strip()
+    deep_thinker_model = os.getenv("DEFAULT_DEEP_THINKER_MODEL", "").strip() or reasoning_model
+    utility_model = os.getenv("DEFAULT_UTILITY_MODEL", "").strip() or reasoning_model
     if provider == "openai":
         key = os.getenv("OPENAI_API_KEY", "")
     elif provider == "gemini":
@@ -45,9 +70,20 @@ def _resolve_model_config(db: Session, user_id: int) -> tuple[str, str, str]:
     else:
         key = ""
 
-    if provider and model and key:
-        return provider, model, key
+    if provider and reasoning_model and deep_thinker_model and utility_model and key:
+        return provider, reasoning_model, deep_thinker_model, utility_model, key
     raise ValueError("AI config missing")
+
+
+def select_model_for_task(
+    reasoning_model: str, deep_thinker_model: str, utility_model: str, task_type: str
+) -> str:
+    normalized_task = (task_type or "").strip().lower()
+    if normalized_task in UTILITY_TASK_TYPES:
+        return utility_model
+    if normalized_task in DEEP_THINK_TASK_TYPES:
+        return deep_thinker_model
+    return reasoning_model
 
 
 def _openai_request(model: str, api_key: str, prompt: str) -> str:
@@ -93,13 +129,20 @@ def _gemini_request(model: str, api_key: str, prompt: str) -> str:
 
 
 class LLMClient(Protocol):
-    def generate_json(self, db: Session, user_id: int, prompt: str) -> dict[str, Any]:
+    def generate_json(
+        self, db: Session, user_id: int, prompt: str, task_type: str = "reasoning"
+    ) -> dict[str, Any]:
         ...
 
 
 class RealLLMClient:
-    def generate_json(self, db: Session, user_id: int, prompt: str) -> dict[str, Any]:
-        provider, model, api_key = _resolve_model_config(db, user_id)
+    def generate_json(
+        self, db: Session, user_id: int, prompt: str, task_type: str = "reasoning"
+    ) -> dict[str, Any]:
+        provider, reasoning_model, deep_thinker_model, utility_model, api_key = _resolve_model_config(
+            db, user_id
+        )
+        model = select_model_for_task(reasoning_model, deep_thinker_model, utility_model, task_type)
         if provider == "openai":
             raw = _openai_request(model, api_key, prompt)
         elif provider == "gemini":

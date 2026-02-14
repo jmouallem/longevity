@@ -28,6 +28,15 @@
 - [ ] All AI calls handled server-side
 - [ ] User can configure AI provider/model/key per account
 - [ ] OpenAI (ChatGPT) and Gemini are supported
+- [ ] Model list can be fetched dynamically from provider API
+- [ ] Deterministic fallback model list exists when provider lookup fails
+- [ ] User can configure a reasoning model profile
+- [ ] User can configure a deep thinker model profile
+- [ ] User can configure a utility model profile
+- [ ] User can manually enable deep-think mode on a coaching submission
+- [ ] Utility tasks route to utility model by default
+- [ ] Deep-think submissions route to deep thinker model by default
+- [ ] Model selectors show cost metadata when available
 - [ ] User AI keys are encrypted at rest
 - [ ] User AI keys are masked in responses and never logged
 - [ ] User can rotate/revoke AI key
@@ -250,6 +259,4 @@ The Longevity Alchemist is considered functionally complete when:
 - [ ] Domain and composite scores update over time
 - [ ] Experiments influence future recommendations
 - [ ] System operates fully within a single Docker container
-
-
 

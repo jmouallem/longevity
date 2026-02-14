@@ -28,6 +28,7 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 | 3 Core Experience Principles | Scientific, data-driven, supportive, non-medical | Slices 2-3 | Partial | Tone/safety present in Slice 3; broader UX/tone adaptation in later phases. |
 | 4 Privacy & Data | Auth, isolation, server-side AI, no image/audio storage | Slice 1 + Slice 3 + guardrails | Partial | Auth and server-side AI included; media handling constraints enforced as out-of-scope in early slices. |
 | 4.1 BYOK AI Provider Config | Per-user provider/model/API key setup with secure storage and masking | Slice 1 + Slice 3 | Partial | Config is captured in auth/onboarding; coaching routes use authenticated user's provider config. |
+| 4.3 Triple Model Profiles + Dynamic Catalog | Dynamic model lookup + deep-thinker/reasoning/utility model slots + explicit task routing defaults + cost metadata | Slice 5 + follow-on coaching slices | Partial | Dynamic model lookup/default selection/cost metadata can be implemented in onboarding; full routing coverage expands with coaching/routing features. |
 | 4.2 External Connector Architecture | Modular provider adapters with normalized sync into internal datasets | Roadmap Phase 5 | Planned | Explicitly deferred; design requires provider abstraction, per-user consent/auth, and incremental sync. |
 | 5 Baseline Establishment | Objective + subjective intake + derived outputs | Slice 1 + Slice 2 | Partial | Baseline capture in Slice 1; derived scoring begins in Slice 2. Optional labs/meds/supplements are later scope. |
 | 5.4 Adaptive Intake Experience | Goal/risk/engagement adaptive intake with hybrid required+optional modules and intake persona | Slice 1 (foundational) + later enhancements in Phases 1-2 | Partial | Required core capture is in Slice 1 scope; focus-area highlights can be produced without numeric scoring. Full adaptive logic, motivational framing, and numeric completion outputs are progressively delivered. |
@@ -71,4 +72,3 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 - Priority of goals subsystem (before or after multi-agent phase).
 - Whether supplement/medication baseline fields should move into a near-term slice.
 - Minimum dashboard requirements for MVP release gate.
-

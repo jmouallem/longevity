@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Longevity Alchemist Onboarding</title>
+    <style>
+      :root {
+        --bg: #eef2f7;
+        --panel: #ffffff;
+        --ink: #1b2533;
+        --muted: #637184;
+        --accent: #0079bf;
+        --accent-2: #026aa7;
+        --ok: #1f845a;
+        --warn: #ad5f00;
+        --error: #c9372c;
+        --border: #dfe5ec;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+        background: radial-gradient(circle at 10% 10%, #f8fbff, var(--bg) 35%);
+      }
+      .shell { max-width: 860px; margin: 0 auto; padding: 1.2rem; }
+      .title { margin: 0 0 .2rem; font-size: clamp(1.3rem, 2vw, 2rem); }
+      .subtitle { margin: 0 0 1rem; color: var(--muted); }
+      .progress {
+        margin: .3rem 0 1rem;
+        background: #dce6ef;
+        border-radius: 999px;
+        overflow: hidden;
+        height: .55rem;
+      }
+      .progress > div {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #2d8fd2, #49b56f);
+        transition: width .25s ease;
+      }
+      .step-tracker {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: .5rem;
+        margin-bottom: .95rem;
+      }
+      .step-pill {
+        border: 1px solid var(--border);
+        background: #f6f9fc;
+        color: #4a627b;
+        border-radius: 999px;
+        font-size: .82rem;
+        text-align: center;
+        padding: .35rem .45rem;
+      }
+      .step-pill.active { background: #d9ebf8; color: #204863; border-color: #b9d6ea; }
+      .step-pill.done { background: #daf3e7; color: #1f6848; border-color: #badfce; }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 6px 20px rgba(7, 45, 84, .08);
+        padding: 1rem;
+      }
+      .screen { display: none; }
+      .screen.active { display: block; }
+      .stephead { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; }
+      .dot {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: #d7e5f3;
+        color: #35556f;
+        font-size: .82rem;
+        font-weight: 700;
+      }
+      .muted { color: var(--muted); font-size: .92rem; margin: .2rem 0 .85rem; }
+      .field { display: grid; gap: .35rem; margin-bottom: .75rem; }
+      label { font-size: .85rem; color: #3f4f63; }
+      input, select {
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: .62rem .7rem;
+        font-size: .95rem;
+      }
+      input:focus, select:focus { outline: 2px solid #b8d6ef; border-color: #8ac0e4; }
+      .row { display: flex; gap: .5rem; }
+      .row > button { flex: 1; }
+      button {
+        border: none;
+        border-radius: 9px;
+        padding: .62rem .8rem;
+        font-size: .95rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-primary { background: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent-2); }
+      .btn-ghost { background: #f1f5f9; color: #1f3550; }
+      .btn-start { background: #0c9a63; color: #fff; width: 100%; }
+      .btn-start:disabled { background: #b6c7d5; cursor: not-allowed; }
+      .notice {
+        min-height: 1.25rem;
+        font-size: .86rem;
+        margin-top: .45rem;
+        color: var(--muted);
+      }
+      .notice.error { color: var(--error); }
+      .notice.warn { color: var(--warn); }
+      .notice.ok { color: var(--ok); }
+      .meter-wrap { display: block; margin: -.2rem 0 .75rem; }
+      .meter {
+        width: 100%;
+        height: .5rem;
+        border-radius: 999px;
+        background: #ebeff3;
+        overflow: hidden;
+      }
+      .meter > div {
+        height: 100%;
+        width: 0%;
+        background: #c9372c;
+        transition: width .15s ease, background .15s ease;
+      }
+      .meter-text { margin-top: .35rem; font-size: .8rem; color: #5f7082; }
+      .checks { margin: .45rem 0 0; padding: 0; list-style: none; font-size: .8rem; color: #5f7082; }
+      .checks li { margin: .15rem 0; }
+      .checks .ok { color: var(--ok); }
+      @media (max-width: 900px) {
+        .shell { padding: .85rem; }
+        .step-tracker { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <h1 class="title">Welcome to The Longevity Alchemist</h1>
+      <p class="subtitle">Complete setup first. Intake unlocks after account + AI configuration.</p>
+      <div class="progress"><div id="progressbar"></div></div>
+
+      <div class="step-tracker">
+        <div class="step-pill" id="pill-auth">1. Account</div>
+        <div class="step-pill" id="pill-llm">2. AI Config</div>
+        <div class="step-pill" id="pill-done">3. Ready</div>
+      </div>
+
+      <section class="card">
+        <article class="screen active" id="screen-auth-login">
+          <div class="stephead"><span class="dot">1</span><strong>Account</strong></div>
+          <p class="muted">Log in to continue. New users can create an account.</p>
+          <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" /></div>
+          <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" /></div>
+          <div class="row">
+            <button class="btn-primary" id="login-submit">Log In</button>
+            <button class="btn-ghost" id="auth-clear" type="button">Clear</button>
+          </div>
+          <div class="notice" style="min-height:auto;">
+            New user? <a href="#" id="go-signup">Create account</a>
+          </div>
+          <div class="notice" id="auth-notice"></div>
+        </article>
+
+        <article class="screen" id="screen-auth-signup">
+          <div class="stephead"><span class="dot">1</span><strong>Create Account</strong></div>
+          <p class="muted">Set up your account, then continue to AI configuration.</p>
+          <div class="field"><label for="signup-email">Email</label><input id="signup-email" type="email" autocomplete="email" /></div>
+          <div class="field"><label for="signup-password">Password</label><input id="signup-password" type="password" autocomplete="new-password" /></div>
+          <div class="meter-wrap" id="password-meter-wrap">
+            <div class="meter"><div id="password-meter-bar"></div></div>
+            <div class="meter-text" id="password-meter-text">Strength: too weak</div>
+            <ul class="checks">
+              <li id="check-length">- At least 8 characters</li>
+              <li id="check-upper">- Uppercase letter</li>
+              <li id="check-lower">- Lowercase letter</li>
+              <li id="check-number">- Number</li>
+              <li id="check-symbol">- Symbol</li>
+            </ul>
+          </div>
+          <div class="row">
+            <button class="btn-primary" id="signup-submit">Create Account</button>
+            <button class="btn-ghost" id="back-login" type="button">Back to Log In</button>
+          </div>
+          <div class="notice" id="signup-notice"></div>
+        </article>
+
+        <article class="screen" id="screen-llm">
+          <div class="stephead"><span class="dot">2</span><strong>AI Configuration</strong></div>
+          <p class="muted">Choose your provider, validate API key, then select deep-thinker, reasoning, and utility models.</p>
+          <div class="field">
+            <label for="provider">Provider</label>
+            <select id="provider">
+              <option value="">Select provider</option>
+              <option value="openai">OpenAI (ChatGPT)</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </div>
+          <div class="field"><label for="api-key">API Key</label><input id="api-key" type="password" placeholder="Your provider key" /></div>
+          <div class="field">
+            <label for="deep-thinker-model">Deep Thinker Model</label>
+            <select id="deep-thinker-model">
+              <option value="">Select deep thinker model</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="reasoning-model">Reasoning Model</label>
+            <select id="reasoning-model">
+              <option value="">Select reasoning model</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="utility-model">Utility Model</label>
+            <select id="utility-model">
+              <option value="">Select utility model</option>
+            </select>
+          </div>
+          <div class="field" style="display:none;">
+            <label for="model">Model (legacy)</label>
+            <select id="model">
+              <option value="">Select model</option>
+            </select>
+          </div>
+          <div class="row">
+            <button class="btn-primary" id="llm-save">Save AI Settings</button>
+            <button class="btn-ghost" id="back-auth" type="button">Back</button>
+          </div>
+          <div class="notice" id="llm-notice"></div>
+        </article>
+
+        <article class="screen" id="screen-done">
+          <div class="stephead"><span class="dot">3</span><strong>Initialization Complete</strong></div>
+          <p class="muted">Your account and AI settings are ready.</p>
+          <button class="btn-start" id="start-intake" disabled>Start Intake</button>
+          <div class="notice warn" id="done-notice">Complete Step 1 and Step 2 to unlock.</div>
+        </article>
+      </section>
+    </div>
+
+    <script>
+      const FALLBACK_MODELS = {
+        openai: ["gpt-4.1-mini", "gpt-4.1", "gpt-4o-mini"],
+        gemini: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"]
+      };
+
+      const state = {
+        token: sessionStorage.getItem("access_token") || "",
+        authDone: false,
+        llmDone: false,
+        currentScreen: "auth-login",
+        modelFetchTimer: null,
+        apiKeyValidated: false
+      };
+
+      const el = (id) => document.getElementById(id);
+      const progressbar = el("progressbar");
+
+      function setNotice(targetId, text, kind) {
+        const node = el(targetId);
+        node.textContent = text || "";
+        node.className = "notice" + (kind ? " " + kind : "");
+      }
+
+      function showScreen(name) {
+        state.currentScreen = name;
+        ["auth-login", "auth-signup", "llm", "done"].forEach((id) => {
+          el("screen-" + id).classList.toggle("active", id === name);
+        });
+      }
+
+      function updateProgress() {
+        const pct = state.authDone && state.llmDone ? 100 : (state.authDone ? 60 : 20);
+        progressbar.style.width = pct + "%";
+      }
+
+      function updateStepPills() {
+        const pillAuth = el("pill-auth");
+        const pillLlm = el("pill-llm");
+        const pillDone = el("pill-done");
+        const authActive = state.currentScreen === "auth-login" || state.currentScreen === "auth-signup";
+        pillAuth.className = "step-pill" + (state.authDone ? " done" : (authActive ? " active" : ""));
+        pillLlm.className = "step-pill" + (state.llmDone ? " done" : (state.currentScreen === "llm" ? " active" : ""));
+        pillDone.className = "step-pill" + (state.authDone && state.llmDone ? (state.currentScreen === "done" ? " active done" : " done") : (state.currentScreen === "done" ? " active" : ""));
+      }
+
+      function refreshDoneState() {
+        const unlocked = state.authDone && state.llmDone;
+        el("start-intake").disabled = !unlocked;
+        setNotice("done-notice", unlocked ? "Setup complete. Intake is now unlocked." : "Complete Step 1 and Step 2 to unlock.", unlocked ? "ok" : "warn");
+      }
+
+      function refreshUI() {
+        updateProgress();
+        updateStepPills();
+        refreshDoneState();
+      }
+
+      function passwordChecks(value) {
+        return {
+          length: value.length >= 8,
+          upper: /[A-Z]/.test(value),
+          lower: /[a-z]/.test(value),
+          number: /[0-9]/.test(value),
+          symbol: /[^A-Za-z0-9]/.test(value)
+        };
+      }
+
+      function passwordScore(value) {
+        const checks = passwordChecks(value);
+        let score = 0;
+        if (checks.length) score += 20;
+        if (checks.upper) score += 20;
+        if (checks.lower) score += 20;
+        if (checks.number) score += 20;
+        if (checks.symbol) score += 20;
+        return { score: Math.min(100, score), checks };
+      }
+
+      function toggleCheck(id, passed) {
+        const node = el(id);
+        node.classList.toggle("ok", passed);
+        if (node.textContent.startsWith("- ")) {
+          node.textContent = (passed ? "[ok] " : "- ") + node.textContent.slice(2);
+        } else if (node.textContent.startsWith("[ok] ")) {
+          node.textContent = (passed ? "[ok] " : "- ") + node.textContent.slice(5);
+        }
+      }
+
+      function updatePasswordMeter() {
+        const result = passwordScore(el("signup-password").value);
+        const score = result.score;
+        const bar = el("password-meter-bar");
+        const text = el("password-meter-text");
+        bar.style.width = score + "%";
+        let label = "too weak";
+        let color = "#c9372c";
+        if (score >= 80) { label = "strong"; color = "#1f845a"; }
+        else if (score >= 60) { label = "good"; color = "#4ea24f"; }
+        else if (score >= 40) { label = "fair"; color = "#d08b17"; }
+        bar.style.background = color;
+        text.textContent = "Strength: " + label;
+        toggleCheck("check-length", result.checks.length);
+        toggleCheck("check-upper", result.checks.upper);
+        toggleCheck("check-lower", result.checks.lower);
+        toggleCheck("check-number", result.checks.number);
+        toggleCheck("check-symbol", result.checks.symbol);
+      }
+
+      function formatModelCostLabel(entry) {
+        if (!entry || typeof entry === "string") return "";
+        if (!entry.cost_known) return " (cost n/a)";
+        const inCost = Number(entry.input_cost_per_1m_usd);
+        const outCost = Number(entry.output_cost_per_1m_usd);
+        if (!Number.isFinite(inCost) || !Number.isFinite(outCost)) return " (cost n/a)";
+        return " ($" + inCost.toFixed(2) + "/$" + outCost.toFixed(2) + " per 1M in/out)";
+      }
+
+      function normalizeModelOptions(models) {
+        if (!Array.isArray(models)) return [];
+        return models
+          .map((entry) => {
+            if (typeof entry === "string") return { model: entry, cost_known: false };
+            if (entry && typeof entry.model === "string" && entry.model.trim()) return entry;
+            return null;
+          })
+          .filter(Boolean);
+      }
+
+      function renderModelOptions(selectId, modelOptions, selectedValue) {
+        const modelSelect = el(selectId);
+        modelSelect.innerHTML = '<option value="">Select model</option>';
+        modelOptions.forEach((entry) => {
+          const name = entry.model;
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name + formatModelCostLabel(entry);
+          modelSelect.appendChild(opt);
+        });
+        const names = modelOptions.map((entry) => entry.model);
+        if (selectedValue && names.includes(selectedValue)) {
+          modelSelect.value = selectedValue;
+        }
+      }
+
+      function setModelSelectorsEnabled(enabled) {
+        el("deep-thinker-model").disabled = !enabled;
+        el("reasoning-model").disabled = !enabled;
+        el("utility-model").disabled = !enabled;
+        el("model").disabled = !enabled;
+      }
+
+      function clearModelOptions() {
+        renderModelOptions("deep-thinker-model", [], "");
+        renderModelOptions("reasoning-model", [], "");
+        renderModelOptions("utility-model", [], "");
+        renderModelOptions("model", [], "");
+      }
+
+      function resetLlmValidation(message, kind) {
+        state.apiKeyValidated = false;
+        setModelSelectorsEnabled(false);
+        clearModelOptions();
+        if (message) {
+          setNotice("llm-notice", message, kind || "warn");
+        }
+      }
+
+      function queueModelFetch() {
+        if (state.modelFetchTimer) clearTimeout(state.modelFetchTimer);
+        state.modelFetchTimer = setTimeout(loadModelsFromBackend, 450);
+      }
+
+      async function loadModelsFromBackend() {
+        const provider = el("provider").value;
+        const apiKey = el("api-key").value.trim();
+
+        if (!provider) {
+          resetLlmValidation("Choose a provider first.", "warn");
+          return;
+        }
+        if (!state.authDone || !state.token) {
+          resetLlmValidation("Complete account setup first.", "warn");
+          return;
+        }
+        if (!apiKey) {
+          resetLlmValidation("Enter API key to validate and load models.", "warn");
+          return;
+        }
+        if (apiKey.length < 8) {
+          resetLlmValidation("API key looks too short. Continue typing to validate.", "warn");
+          return;
+        }
+
+        setNotice("llm-notice", "Validating API key and loading models...", "");
+        try {
+          const response = await fetch("/auth/model-options", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + state.token
+            },
+            body: JSON.stringify({ ai_provider: provider, ai_api_key: apiKey || null })
+          });
+          if (!response.ok) throw new Error("lookup failed");
+          const payload = await response.json();
+          if (payload.source !== "provider_api") {
+            resetLlmValidation("API key validation failed. Check provider/key and try again.", "error");
+            return;
+          }
+          const modelOptions = normalizeModelOptions(payload.model_options && payload.model_options.length ? payload.model_options : payload.models);
+          const models = modelOptions.map((entry) => entry.model);
+          if (!models.length) {
+            resetLlmValidation("API key is valid, but provider returned no models.", "warn");
+            return;
+          }
+          const defaultDeepThinker = payload.default_deep_thinker_model || payload.default_reasoning_model || payload.default_model || models[0];
+          const defaultReasoning = payload.default_reasoning_model || payload.default_model || models[0];
+          const defaultUtility = payload.default_utility_model || defaultReasoning;
+          renderModelOptions("deep-thinker-model", modelOptions, defaultDeepThinker);
+          renderModelOptions("reasoning-model", modelOptions, defaultReasoning);
+          renderModelOptions("utility-model", modelOptions, defaultUtility);
+          renderModelOptions("model", modelOptions, defaultReasoning);
+          state.apiKeyValidated = true;
+          setModelSelectorsEnabled(true);
+          setNotice("llm-notice", "API key validated. Models and estimated costs loaded from provider catalog.", "ok");
+        } catch (_) {
+          resetLlmValidation("Could not validate API key right now. Check key/network and retry.", "error");
+        }
+      }
+
+      async function login() {
+        const email = el("email").value.trim();
+        const password = el("password").value;
+        if (!email || !password) {
+          setNotice("auth-notice", "Email and password are required.", "error");
+          return;
+        }
+        setNotice("auth-notice", "Logging in...", "");
+        try {
+          const body = new URLSearchParams({ username: email, password });
+          const loginRes = await fetch("/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body
+          });
+          if (!loginRes.ok) throw new Error("Login failed. Check your credentials.");
+          const token = (await loginRes.json()).access_token;
+          state.token = token;
+          state.authDone = true;
+          sessionStorage.setItem("access_token", token);
+          setNotice("auth-notice", "Authenticated. Continue to AI configuration.", "ok");
+          showScreen("llm");
+          refreshUI();
+          queueModelFetch();
+        } catch (err) {
+          setNotice("auth-notice", err.message || "Authentication failed.", "error");
+        }
+      }
+
+      async function signup() {
+        const email = el("signup-email").value.trim();
+        const password = el("signup-password").value;
+        if (!email || !password) {
+          setNotice("signup-notice", "Email and password are required.", "error");
+          return;
+        }
+        if (password.length < 8) {
+          setNotice("signup-notice", "Password must be at least 8 characters.", "error");
+          return;
+        }
+        setNotice("signup-notice", "Creating account...", "");
+        try {
+          const signupRes = await fetch("/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+          });
+          if (!signupRes.ok) {
+            let detail = "";
+            try {
+              const payload = await signupRes.json();
+              detail = (payload && payload.detail) ? String(payload.detail) : "";
+            } catch (_) {}
+            if (signupRes.status === 409 || detail.toLowerCase().includes("already")) {
+              throw new Error("Email already registered. Please log in or use a different email.");
+            }
+            throw new Error(detail || "Signup failed. Please try again.");
+          }
+          const token = (await signupRes.json()).access_token;
+          state.token = token;
+          state.authDone = true;
+          sessionStorage.setItem("access_token", token);
+          setNotice("signup-notice", "Account created. Continue to AI configuration.", "ok");
+          showScreen("llm");
+          refreshUI();
+          queueModelFetch();
+        } catch (err) {
+          setNotice("signup-notice", err.message || "Signup failed.", "error");
+        }
+      }
+
+      async function saveLlmConfig() {
+        const provider = el("provider").value;
+        const deepThinkerModel = el("deep-thinker-model").value.trim();
+        const reasoningModel = el("reasoning-model").value.trim();
+        const utilityModel = el("utility-model").value.trim();
+        const apiKey = el("api-key").value.trim();
+        if (!state.authDone || !state.token) {
+          setNotice("llm-notice", "Complete account setup first.", "error");
+          return;
+        }
+        if (!provider || !deepThinkerModel || !reasoningModel || !utilityModel || !apiKey) {
+          setNotice("llm-notice", "Provider, API key, deep thinker model, reasoning model, and utility model are required.", "error");
+          return;
+        }
+        if (!state.apiKeyValidated) {
+          setNotice("llm-notice", "Validate a working API key before selecting models.", "error");
+          return;
+        }
+        setNotice("llm-notice", "Saving AI settings...", "");
+        try {
+          const res = await fetch("/auth/ai-config", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + state.token
+            },
+            body: JSON.stringify({
+              ai_provider: provider,
+              ai_deep_thinker_model: deepThinkerModel,
+              ai_reasoning_model: reasoningModel,
+              ai_utility_model: utilityModel,
+              ai_model: reasoningModel,
+              ai_api_key: apiKey
+            })
+          });
+          if (!res.ok) throw new Error("Could not save AI settings. Please verify provider/model/key.");
+          state.llmDone = true;
+          setNotice("llm-notice", "AI settings saved. Key stored securely server-side.", "ok");
+          el("api-key").value = "";
+          showScreen("done");
+          refreshUI();
+        } catch (err) {
+          setNotice("llm-notice", err.message || "AI configuration failed.", "error");
+        }
+      }
+
+      function startIntake() {
+        if (!(state.authDone && state.llmDone)) return;
+        window.location.href = "/docs";
+      }
+
+      function clearAuth() {
+        el("email").value = "";
+        el("password").value = "";
+        setNotice("auth-notice", "", "");
+      }
+
+      el("login-submit").addEventListener("click", login);
+      el("auth-clear").addEventListener("click", clearAuth);
+      el("go-signup").addEventListener("click", (event) => {
+        event.preventDefault();
+        showScreen("auth-signup");
+        refreshUI();
+      });
+      el("signup-submit").addEventListener("click", signup);
+      el("back-login").addEventListener("click", () => {
+        showScreen("auth-login");
+        refreshUI();
+      });
+      el("provider").addEventListener("change", () => {
+        resetLlmValidation("Enter API key to validate and load models.", "warn");
+        queueModelFetch();
+      });
+      el("api-key").addEventListener("input", queueModelFetch);
+      el("llm-save").addEventListener("click", saveLlmConfig);
+      el("back-auth").addEventListener("click", () => {
+        showScreen("auth-login");
+        refreshUI();
+      });
+      el("signup-password").addEventListener("input", updatePasswordMeter);
+      el("start-intake").addEventListener("click", startIntake);
+
+      setModelSelectorsEnabled(false);
+      clearModelOptions();
+      showScreen("auth-login");
+      updatePasswordMeter();
+      refreshUI();
+    </script>
+  </body>
+</html>

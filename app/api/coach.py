@@ -31,6 +31,7 @@ class CoachMode(str, Enum):
 class CoachQuestionRequest(BaseModel):
     question: str = Field(min_length=2, max_length=1000)
     mode: CoachMode = CoachMode.quick
+    deep_think: bool = False
     context_hint: Optional[str] = Field(default=None, max_length=120)
 
 
@@ -48,8 +49,11 @@ class CoachQuestionResponse(BaseModel):
     disclaimer: str
 
 
-def request_coaching_json(db: Session, user_id: int, prompt: str, llm_client: LLMClient) -> dict[str, Any]:
-    return llm_client.generate_json(db=db, user_id=user_id, prompt=prompt)
+def request_coaching_json(
+    db: Session, user_id: int, prompt: str, llm_client: LLMClient, deep_think: bool = False
+) -> dict[str, Any]:
+    task_type = "deep_think" if deep_think else "reasoning"
+    return llm_client.generate_json(db=db, user_id=user_id, prompt=prompt, task_type=task_type)
 
 
 def _disclaimer() -> str:
@@ -134,6 +138,8 @@ def _build_llm_prompt(payload: CoachQuestionRequest, context: dict[str, Any]) ->
 
 def _tags_from_context(payload: CoachQuestionRequest, context: dict[str, Any]) -> str:
     tags = [payload.mode.value]
+    if payload.deep_think:
+        tags.append("deep_think")
     if payload.context_hint:
         tags.append(payload.context_hint.lower().replace(" ", "_"))
     missing = context.get("missing_data", [])
@@ -205,7 +211,13 @@ def ask_coach_question(
     llm_error = False
     try:
         llm_prompt = _build_llm_prompt(payload, context)
-        raw = request_coaching_json(db=db, user_id=user.id, prompt=llm_prompt, llm_client=llm_client)
+        raw = request_coaching_json(
+            db=db,
+            user_id=user.id,
+            prompt=llm_prompt,
+            llm_client=llm_client,
+            deep_think=payload.deep_think,
+        )
         answer = str(raw.get("answer", "")).strip()
         if not answer:
             raise ValueError("missing answer")

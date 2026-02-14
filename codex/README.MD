@@ -15,6 +15,8 @@ It is designed to be evidence-informed, supportive, and practical, with strong p
 - authenticated multi-user accounts,
 - strict per-user data isolation,
 - per-user AI provider/model configuration (BYOK),
+- dynamic provider model discovery (with safe fallback model lists),
+- separate deep-thinker, reasoning, and utility model profiles per user,
 - support for OpenAI (ChatGPT) and Gemini,
 - server-side AI integration,
 - SQLite-backed persistence,

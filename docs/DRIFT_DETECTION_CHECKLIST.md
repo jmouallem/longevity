@@ -43,6 +43,11 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 ## AI Calls
 - [ ] LLM calls are **server-side only**.
 - [ ] No client-side API keys or direct browser calls to LLM providers.
+- [ ] Dynamic model catalog lookup has deterministic fallback list behavior.
+- [ ] Model selectors expose cost metadata when available.
+- [ ] Deep-think submissions route to deep thinker model profile by default.
+- [ ] Utility tasks route to utility model profile by default.
+- [ ] Reasoning tasks route to reasoning model profile by default.
 
 ---
 
@@ -177,4 +182,3 @@ You may merge only if:
 - [ ] Slice Acceptance Criteria met
 - [ ] Tests pass
 - [ ] Diff smell test passes
-

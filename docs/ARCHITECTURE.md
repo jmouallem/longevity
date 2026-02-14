@@ -55,6 +55,16 @@ Single Docker Container (Render Web Service)
 - API keys never exposed to browser.
 - User data isolated per account.
 
+### 3.5 Triple Model Profiles
+- Each user has three model profiles:
+  - deep thinker profile
+  - reasoning profile
+  - utility profile
+- Model selection must be explicit and deterministic per task class.
+- Deep-think submissions use deep thinker profile by default.
+- Utility tasks (routing/summarization/extraction/classification) use utility profile by default.
+- Reasoning-heavy tasks use reasoning profile by default.
+
 ---
 
 ## 4. Component Breakdown
@@ -107,6 +117,14 @@ Workflow:
 4. Collect structured outputs
 5. Synthesize recommendations
 6. Wrap in persona tone
+
+### 4.5 Model Catalog Service
+
+Responsibilities:
+- Fetch provider model lists (OpenAI/Gemini) using authenticated user key when available
+- Provide fallback model lists when provider lookup fails
+- Return best-default model candidate for each profile slot
+- Return per-model cost metadata when known
 
 ---
 
@@ -195,4 +213,3 @@ This increases engagement and improves data collection.
 - SQLite stored on mounted path
 - Environment variables for API keys
 - Single web service container
-
