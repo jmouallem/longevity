@@ -33,6 +33,7 @@ Use these files in order:
    - `slice_prompt_3.md`
    - `slice_prompt_4.md`
    - `slice_prompt_5.md`
+   - `slice_prompt_6.md`
 
 ## Supporting Docs
 Load only what is needed for the active task:

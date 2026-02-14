@@ -107,11 +107,7 @@ Break delivery into phases, then into vertical slices.
 
 Outputs:
 - `BUILD_ROADMAP.md`
-- `codex/slice_prompt_1.md`
-- `codex/slice_prompt_2.md`
-- `codex/slice_prompt_3.md`
-- `codex/slice_prompt_4.md`
-- `codex/slice_prompt_5.md`
+- `codex/slice_prompt_<n>.md` (one per slice)
 
 Each slice must define:
 - In-scope work

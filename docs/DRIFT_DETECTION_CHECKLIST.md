@@ -57,6 +57,8 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 - [ ] Request/response schemas match documented contracts.
 - [ ] Response always includes required fields (especially for AI endpoints).
 - [ ] Error responses are consistent and predictable.
+- [ ] Intake status contract (`/intake/status`) remains stable.
+- [ ] Model usage contract (`/auth/model-usage`) remains stable.
 
 ## AI Output Contracts
 - [ ] LLM responses are validated against schema.
@@ -143,6 +145,9 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 - [ ] Suggested next questions are present (guided questioning).
 - [ ] Tone remains warm and supportive (no shame).
 - [ ] The system is still scientific coach, not generic advice bot.
+- [ ] Setup completion offers both start-intake-now and skip-for-now paths.
+- [ ] Intake can be re-run from main workspace menu at any time.
+- [ ] Workspace settings menu still supports AI config update and password change.
 
 ---
 

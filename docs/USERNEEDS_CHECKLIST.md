@@ -41,6 +41,8 @@
 - [ ] User AI keys are masked in responses and never logged
 - [ ] User can rotate/revoke AI key
 - [ ] Coaching uses the authenticated user's configured provider/model
+- [ ] Token usage tracked per user/provider/model
+- [ ] Token usage endpoint returns prompt/completion/total token counts and request counts
 - [ ] External connectors use modular provider adapters (not hard-coded provider logic in core domain)
 - [ ] Per-user consent/auth enforced for each external connector
 - [ ] Synced provider data is normalized into internal structured metrics
@@ -93,6 +95,16 @@
 - [ ] Intake completion summary is generated
 - [ ] Post-intake focus areas highlighted without requiring numeric scores
 - [ ] No full free-form intake transcript is stored
+- [ ] User can skip intake after setup and complete later from workspace menu
+- [ ] Existing users can re-run/update intake at any time
+- [ ] Intake menu clearly shows completion status
+- [ ] Successful intake submission routes user to default chat view
+
+## Main Workspace + Settings
+- [ ] Main workspace has one-view-at-a-time menu navigation
+- [ ] Workspace includes chat, intake, settings, and usage views
+- [ ] Settings include AI config updates
+- [ ] Settings include password change
 ---
 
 # 4?? Goal Definition
@@ -259,4 +271,3 @@ The Longevity Alchemist is considered functionally complete when:
 - [ ] Domain and composite scores update over time
 - [ ] Experiments influence future recommendations
 - [ ] System operates fully within a single Docker container
-

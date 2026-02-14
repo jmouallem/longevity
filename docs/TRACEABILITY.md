@@ -11,6 +11,7 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 - `codex/slice_prompt_3.md`
 - `codex/slice_prompt_4.md`
 - `codex/slice_prompt_5.md`
+- `codex/slice_prompt_6.md`
 - `docs/BUILD_ROADMAP.md`
 
 ## Status Legend
@@ -32,7 +33,7 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 | 4.2 External Connector Architecture | Modular provider adapters with normalized sync into internal datasets | Roadmap Phase 5 | Planned | Explicitly deferred; design requires provider abstraction, per-user consent/auth, and incremental sync. |
 | 5 Baseline Establishment | Objective + subjective intake + derived outputs | Slice 1 + Slice 2 | Partial | Baseline capture in Slice 1; derived scoring begins in Slice 2. Optional labs/meds/supplements are later scope. |
 | 5.4 Adaptive Intake Experience | Goal/risk/engagement adaptive intake with hybrid required+optional modules and intake persona | Slice 1 (foundational) + later enhancements in Phases 1-2 | Partial | Required core capture is in Slice 1 scope; focus-area highlights can be produced without numeric scoring. Full adaptive logic, motivational framing, and numeric completion outputs are progressively delivered. |
-| 5.11 Conversational/Multimodal Intake (Future) | Intake can run as conversation later (text/voice), while preserving deterministic structured storage | Roadmap Phase 5 | Planned | Explicitly deferred; current intake remains structured + adaptive text flow. |
+| 5.11 Intake Lifecycle + Main Workspace | Optional/re-runnable intake, completion status in menu, post-intake chat routing, settings menu access | Slice 6 | Covered | Slice 6 introduces workspace UI + intake status endpoint + settings actions. |
 | 6 Goal Definition | Measurable goals and timeline guidance | Roadmap Phases 2-4 | Planned | Not in Slices 1-4 contracts. |
 | 7 Personalized Planning | Step-by-step nutrition/exercise/sleep/stress/supplements | Slice 3 + Roadmap Phases 2-4 | Partial | Initial coaching endpoint in Slice 3; full planning system later. |
 | 8 Multi-Disciplinary Reasoning | Domain agents + synthesis + confidence | Roadmap Phase 2 | Planned | Explicitly out-of-scope for Slice 3 (single-call only). |
@@ -55,6 +56,7 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
   - Contextual coaching endpoint: Slice 3
   - Deterministic AI test harness: Slice 4
   - GUI onboarding + LLM setup gate before intake: Slice 5
+  - Workspace menu + optional/re-runnable intake + settings + model usage stats: Slice 6
 
 - Checklist groups primarily mapped to later phases:
   - Full round-table agents

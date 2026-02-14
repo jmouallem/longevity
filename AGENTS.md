@@ -17,6 +17,7 @@ Use the project slice prompts as the source of truth:
 3. Slice 3: coaching endpoint (single LLM call)
 4. Slice 4: offline AI testing harness
 5. Slice 5: GUI onboarding + initialization gate before intake
+6. Slice 6: skippable/re-runnable intake from main workspace + settings menu + token usage stats
 
 When working a slice:
 - Implement only that slice's goal and acceptance criteria.
@@ -43,9 +44,11 @@ If documents conflict, resolve in this order:
 - No external database for MVP.
 - Do not store meal images or audio files; store only structured outputs/transcripts where applicable.
 - Model catalogs should be fetched from provider APIs when possible, with deterministic fallback lists.
-- Support two user model profiles:
-  - reasoning profile (deep analysis/planning tasks)
+- Support three user model profiles:
+  - deep thinker profile (manual deep-think submissions)
+  - reasoning profile (default analysis/planning tasks)
   - utility profile (routing/summarization/classification/other utility tasks)
+- Route deep-think submissions to the deep thinker profile by default.
 - Route lightweight utility tasks to the utility profile by default.
 
 ## Data and API Requirements

@@ -78,6 +78,12 @@ class BaselineResponse(BaseModel):
     disclaimer: str
 
 
+class IntakeStatusResponse(BaseModel):
+    baseline_completed: bool
+    baseline_updated_at: Optional[str] = None
+    primary_goal: Optional[str] = None
+
+
 def _goal_focus(goal: PrimaryGoal) -> list[str]:
     mapping = {
         PrimaryGoal.energy: ["sleep quality", "stress load", "daytime movement"],
@@ -225,4 +231,21 @@ def get_baseline(
         fasting_practices=record.fasting_practices,
         recovery_practices=record.recovery_practices,
         medication_details=record.medication_details,
+    )
+
+
+@router.get("/status", response_model=IntakeStatusResponse)
+def intake_status(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> IntakeStatusResponse:
+    record = db.query(Baseline).filter(Baseline.user_id == user.id).first()
+    if not record:
+        return IntakeStatusResponse(baseline_completed=False)
+    updated_at_iso = None
+    if record.updated_at:
+        updated_at_iso = record.updated_at.isoformat()
+    return IntakeStatusResponse(
+        baseline_completed=True,
+        baseline_updated_at=updated_at_iso,
+        primary_goal=record.primary_goal,
     )

@@ -23,6 +23,7 @@ Start fast with minimal context while preserving slice discipline.
 - For onboarding/model work: prefer dynamic provider model lookup with deterministic fallback lists.
 - Keep deep-thinker, reasoning, and utility model profiles explicit in contracts and tests.
 - For model selectors, expose per-model cost metadata when known.
+- For workspace flow, keep intake optional at setup and re-runnable from main menu.
 
 ## Output Checklist
 - What changed

@@ -144,3 +144,21 @@ class ConversationSummary(Base):
     safety_flags: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
 
     user: Mapped[User] = relationship("User", back_populates="conversation_summaries")
+
+
+class ModelUsageStat(Base):
+    __tablename__ = "model_usage_stats"
+    __table_args__ = (
+        UniqueConstraint("user_id", "provider", "model", name="uq_model_usage_user_provider_model"),
+        Index("ix_model_usage_user_last_used", "user_id", "last_used_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    model: Mapped[str] = mapped_column(String(128), nullable=False)
+    request_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    prompt_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    completion_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_used_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

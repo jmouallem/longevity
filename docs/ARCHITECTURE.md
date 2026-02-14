@@ -72,12 +72,11 @@ Single Docker Container (Render Web Service)
 ### 4.1 Frontend
 
 Responsibilities:
-- Authentication UI
-- Dashboard (domain scores + composite score)
+- Onboarding UI
+- Main workspace UI with menu views (chat, intake, settings, usage)
+- Intake completion status indicator
 - Guided question prompts
-- Metrics input forms
-- Voice & image upload
-- Experiment views
+- Settings flows (AI config, password change)
 
 Technology:
 - React or Next.js SPA
@@ -92,7 +91,9 @@ Responsibilities:
 - REST API endpoints
 - Data validation
 - AI orchestration
-- Image and voice handling
+- Intake status + baseline upsert endpoints
+- Settings endpoints (AI config, password change)
+- Model usage stats endpoint
 - Score calculation
 - Experiment lifecycle logic
 
@@ -134,11 +135,13 @@ Located on mounted persistent disk.
 
 Core tables:
 - users
+- user_ai_configs
 - baselines
 - goals
 - metrics (time-series)
 - domain_scores
 - composite_scores
+- model_usage_stats
 - experiments
 - interventions
 - conversation_summaries

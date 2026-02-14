@@ -130,6 +130,7 @@
       .checks { margin: .45rem 0 0; padding: 0; list-style: none; font-size: .8rem; color: #5f7082; }
       .checks li { margin: .15rem 0; }
       .checks .ok { color: var(--ok); }
+      .hidden { display: none !important; }
       @media (max-width: 900px) {
         .shell { padding: .85rem; }
         .step-tracker { grid-template-columns: 1fr; }
@@ -138,11 +139,11 @@
   </head>
   <body>
     <div class="shell">
-      <h1 class="title">Welcome to The Longevity Alchemist</h1>
-      <p class="subtitle">Complete setup first. Intake unlocks after account + AI configuration.</p>
-      <div class="progress"><div id="progressbar"></div></div>
+      <h1 class="title" id="page-title">Welcome to The Longevity Alchemist</h1>
+      <p class="subtitle" id="page-subtitle">Complete setup first. Intake unlocks after account + AI configuration.</p>
+      <div class="progress" id="setup-progress"><div id="progressbar"></div></div>
 
-      <div class="step-tracker">
+      <div class="step-tracker" id="step-tracker">
         <div class="step-pill" id="pill-auth">1. Account</div>
         <div class="step-pill" id="pill-llm">2. AI Config</div>
         <div class="step-pill" id="pill-done">3. Ready</div>
@@ -232,8 +233,11 @@
 
         <article class="screen" id="screen-done">
           <div class="stephead"><span class="dot">3</span><strong>Initialization Complete</strong></div>
-          <p class="muted">Your account and AI settings are ready.</p>
-          <button class="btn-start" id="start-intake" disabled>Start Intake</button>
+          <p class="muted">Your account and AI settings are ready. You can start intake now or skip and run it later from the Intake menu in the main screen.</p>
+          <div class="row">
+            <button class="btn-start" id="start-intake" disabled>Start Intake Now</button>
+            <button class="btn-ghost" id="skip-intake" type="button">Skip For Now</button>
+          </div>
           <div class="notice warn" id="done-notice">Complete Step 1 and Step 2 to unlock.</div>
         </article>
       </section>
@@ -268,6 +272,16 @@
         ["auth-login", "auth-signup", "llm", "done"].forEach((id) => {
           el("screen-" + id).classList.toggle("active", id === name);
         });
+        updateSetupChrome();
+      }
+
+      function updateSetupChrome() {
+        const isLoginOnly = state.currentScreen === "auth-login";
+        el("setup-progress").classList.toggle("hidden", isLoginOnly);
+        el("step-tracker").classList.toggle("hidden", isLoginOnly);
+        el("page-subtitle").textContent = isLoginOnly
+          ? "Log in to continue. Setup steps are only for new users."
+          : "Complete setup first. Intake unlocks after account + AI configuration.";
       }
 
       function updateProgress() {
@@ -490,6 +504,15 @@
           state.token = token;
           state.authDone = true;
           sessionStorage.setItem("access_token", token);
+          const cfgRes = await fetch("/auth/ai-config", {
+            headers: { "Authorization": "Bearer " + token }
+          });
+          if (cfgRes.ok) {
+            state.llmDone = true;
+            setNotice("auth-notice", "Authenticated. Redirecting to workspace...", "ok");
+            window.location.href = "/app";
+            return;
+          }
           setNotice("auth-notice", "Authenticated. Continue to AI configuration.", "ok");
           showScreen("llm");
           refreshUI();
@@ -589,7 +612,12 @@
 
       function startIntake() {
         if (!(state.authDone && state.llmDone)) return;
-        window.location.href = "/docs";
+        window.location.href = "/app#intake";
+      }
+
+      function skipIntake() {
+        if (!(state.authDone && state.llmDone)) return;
+        window.location.href = "/app";
       }
 
       function clearAuth() {
@@ -622,6 +650,28 @@
       });
       el("signup-password").addEventListener("input", updatePasswordMeter);
       el("start-intake").addEventListener("click", startIntake);
+      el("skip-intake").addEventListener("click", skipIntake);
+
+      function submitByScreen() {
+        if (state.currentScreen === "auth-login") {
+          login();
+        } else if (state.currentScreen === "auth-signup") {
+          signup();
+        } else if (state.currentScreen === "llm") {
+          saveLlmConfig();
+        } else if (state.currentScreen === "done") {
+          startIntake();
+        }
+      }
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        const target = event.target;
+        if (target && target.tagName === "TEXTAREA" && event.shiftKey) return;
+        if (event.shiftKey) return;
+        event.preventDefault();
+        submitByScreen();
+      });
 
       setModelSelectorsEnabled(false);
       clearModelOptions();

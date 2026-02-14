@@ -18,7 +18,7 @@ from app.core.security import (
     mask_api_key,
     verify_password,
 )
-from app.db.models import User, UserAIConfig
+from app.db.models import ModelUsageStat, User, UserAIConfig
 from app.db.session import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -63,6 +63,11 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class SessionResponse(BaseModel):
+    user_id: int
+    email: str
+
+
 class AIConfigResponse(BaseModel):
     ai_provider: AIProvider
     ai_model: str
@@ -71,6 +76,25 @@ class AIConfigResponse(BaseModel):
     ai_utility_model: str
     api_key_masked: str
     configured: bool = True
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class ModelUsageEntry(BaseModel):
+    provider: str
+    model: str
+    request_count: int
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    last_used_at: str
+
+
+class ModelUsageResponse(BaseModel):
+    items: list[ModelUsageEntry]
 
 
 class ModelOptionsRequest(BaseModel):
@@ -292,6 +316,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return TokenResponse(access_token=token)
 
 
+@router.get("/session", response_model=SessionResponse)
+def get_session(user: User = Depends(get_current_user)) -> SessionResponse:
+    return SessionResponse(user_id=user.id, email=user.email)
+
+
 @router.put("/ai-config", response_model=AIConfigResponse)
 def set_ai_config(
     payload: AIConfigInput,
@@ -397,3 +426,42 @@ def revoke_ai_config(user: User = Depends(get_current_user), db: Session = Depen
         raise HTTPException(status_code=404, detail="AI config not found")
     db.delete(cfg)
     db.commit()
+
+
+@router.put("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: ChangePasswordRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    if not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    user.password_hash = get_password_hash(payload.new_password)
+    db.commit()
+
+
+@router.get("/model-usage", response_model=ModelUsageResponse)
+def model_usage(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ModelUsageResponse:
+    rows = (
+        db.query(ModelUsageStat)
+        .filter(ModelUsageStat.user_id == user.id)
+        .order_by(ModelUsageStat.total_tokens.desc(), ModelUsageStat.model.asc())
+        .all()
+    )
+    return ModelUsageResponse(
+        items=[
+            ModelUsageEntry(
+                provider=row.provider,
+                model=row.model,
+                request_count=row.request_count,
+                prompt_tokens=row.prompt_tokens,
+                completion_tokens=row.completion_tokens,
+                total_tokens=row.total_tokens,
+                last_used_at=row.last_used_at.isoformat(),
+            )
+            for row in rows
+        ]
+    )

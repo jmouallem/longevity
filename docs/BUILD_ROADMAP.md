@@ -61,6 +61,8 @@ This phase makes the product real.
 - [ ] Deep-think submissions route to deep thinker profile
 - [ ] Block intake start until account + LLM config are complete
 - [ ] Clear setup progress and error handling in UI
+- [ ] Offer "Start intake now" and "Skip for now" after setup
+- [ ] Existing-user login routes to main workspace if setup already complete
 
 ### 1.1 Baseline Intake
 - [ ] Baseline schema created
@@ -72,6 +74,17 @@ This phase makes the product real.
 - [ ] Engagement-based tone/depth adaptation
 - [ ] Required-core + optional-module intake model
 - [ ] Motivational + data-transparency completion framing
+- [ ] Intake can be launched/re-launched from main workspace menu
+- [ ] Intake completion status is visible in workspace menu
+- [ ] Intake completion routes user to default chat view
+
+### 1.1.1 Main Workspace + Settings
+- [ ] Main workspace menu with one-view-at-a-time navigation
+- [ ] Chat, Intake, Settings, and Usage views are available
+- [ ] Settings menu supports AI config updates
+- [ ] Settings menu supports password change
+- [ ] Track per-user/per-model token usage stats
+- [ ] Expose token usage endpoint for workspace usage view
 
 ### 1.2 Metrics System
 - [ ] Time-series metrics table

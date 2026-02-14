@@ -32,12 +32,15 @@ Its purpose is to capture essential, relatively static project context to ensure
 - Dynamic model catalog lookup from provider APIs (with fallback lists)
 - Per-user triple model profiles (deep thinker + reasoning + utility) with deterministic routing
 - Structured baseline data collection and storage
+- Main workspace UI with menu-based Chat/Intake/Settings/Usage views
+- Skippable and re-runnable intake lifecycle from workspace menu
 - Future: conversational/multimodal intake mode (while retaining structured storage)
 - Adaptive intake with goal/risk/engagement-based questioning and tone
 - Future: modular external data connectors (Apple Health, Hume) with normalized sync into internal datasets
 - Time-series health metrics logging
 - Domain scoring and composite score tracking
 - AI-assisted coaching via a `/coach/question` endpoint
+- Token usage tracking per user/provider/model
 - Modular testing harness with mockable LLMs
 - Guided question suggestions
 - Simple dashboard summary API
@@ -150,6 +153,7 @@ Key directories and files:
   slice_prompt_3.md
   slice_prompt_4.md
   slice_prompt_5.md
+  slice_prompt_6.md
 
 /docs
   ARCHITECTURE.md
@@ -274,6 +278,7 @@ Update this document when:
 - Slice 3: single-call coaching endpoint + safety + summary persistence
 - Slice 4: deterministic offline AI testing harness
 - Slice 5: GUI onboarding + initialization gate (account + LLM config before intake)
+- Slice 6: workspace menu + optional/re-runnable intake + settings + model token usage stats
 
 
 

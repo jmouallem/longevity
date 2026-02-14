@@ -1,12 +1,13 @@
 import json
 import os
+from datetime import datetime, timezone
 from typing import Any, Protocol, Tuple
 
 import httpx
 from sqlalchemy.orm import Session
 
 from app.core.security import decrypt_api_key
-from app.db.models import UserAIConfig
+from app.db.models import ModelUsageStat, UserAIConfig
 
 LLM_TIMEOUT_SECONDS = 20.0
 
@@ -86,7 +87,7 @@ def select_model_for_task(
     return reasoning_model
 
 
-def _openai_request(model: str, api_key: str, prompt: str) -> str:
+def _openai_request(model: str, api_key: str, prompt: str) -> Tuple[str, dict[str, int]]:
     response = httpx.post(
         "https://api.openai.com/v1/chat/completions",
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
@@ -109,10 +110,16 @@ def _openai_request(model: str, api_key: str, prompt: str) -> str:
     )
     response.raise_for_status()
     data = response.json()
-    return data["choices"][0]["message"]["content"]
+    usage = data.get("usage", {}) if isinstance(data, dict) else {}
+    usage_tokens = {
+        "prompt_tokens": int(usage.get("prompt_tokens", 0) or 0),
+        "completion_tokens": int(usage.get("completion_tokens", 0) or 0),
+        "total_tokens": int(usage.get("total_tokens", 0) or 0),
+    }
+    return data["choices"][0]["message"]["content"], usage_tokens
 
 
-def _gemini_request(model: str, api_key: str, prompt: str) -> str:
+def _gemini_request(model: str, api_key: str, prompt: str) -> Tuple[str, dict[str, int]]:
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     response = httpx.post(
         url,
@@ -125,7 +132,51 @@ def _gemini_request(model: str, api_key: str, prompt: str) -> str:
     )
     response.raise_for_status()
     data = response.json()
-    return data["candidates"][0]["content"]["parts"][0]["text"]
+    usage = data.get("usageMetadata", {}) if isinstance(data, dict) else {}
+    prompt_tokens = int(usage.get("promptTokenCount", 0) or 0)
+    completion_tokens = int(usage.get("candidatesTokenCount", 0) or 0)
+    total_tokens = int(usage.get("totalTokenCount", prompt_tokens + completion_tokens) or 0)
+    usage_tokens = {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+    }
+    return data["candidates"][0]["content"]["parts"][0]["text"], usage_tokens
+
+
+def _record_usage(
+    db: Session, user_id: int, provider: str, model: str, usage_tokens: dict[str, int]
+) -> None:
+    prompt_tokens = max(0, int(usage_tokens.get("prompt_tokens", 0) or 0))
+    completion_tokens = max(0, int(usage_tokens.get("completion_tokens", 0) or 0))
+    total_tokens = max(0, int(usage_tokens.get("total_tokens", prompt_tokens + completion_tokens) or 0))
+    row = (
+        db.query(ModelUsageStat)
+        .filter(
+            ModelUsageStat.user_id == user_id,
+            ModelUsageStat.provider == provider,
+            ModelUsageStat.model == model,
+        )
+        .first()
+    )
+    now = datetime.now(timezone.utc)
+    if not row:
+        row = ModelUsageStat(
+            user_id=user_id,
+            provider=provider,
+            model=model,
+            request_count=0,
+            prompt_tokens=0,
+            completion_tokens=0,
+            total_tokens=0,
+            last_used_at=now,
+        )
+        db.add(row)
+    row.request_count += 1
+    row.prompt_tokens += prompt_tokens
+    row.completion_tokens += completion_tokens
+    row.total_tokens += total_tokens
+    row.last_used_at = now
 
 
 class LLMClient(Protocol):
@@ -144,11 +195,13 @@ class RealLLMClient:
         )
         model = select_model_for_task(reasoning_model, deep_thinker_model, utility_model, task_type)
         if provider == "openai":
-            raw = _openai_request(model, api_key, prompt)
+            raw, usage_tokens = _openai_request(model, api_key, prompt)
         elif provider == "gemini":
-            raw = _gemini_request(model, api_key, prompt)
+            raw, usage_tokens = _gemini_request(model, api_key, prompt)
         else:
             raise ValueError("Unsupported AI provider")
+        _record_usage(db, user_id, provider, model, usage_tokens)
+        db.commit()
         return parse_llm_json(raw)
 
 

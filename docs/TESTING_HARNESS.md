@@ -225,6 +225,8 @@ Assert these, not quality:
 - Utility task class uses utility model profile by default
 - Deep-think task class uses deep thinker model profile by default
 - Reasoning task class uses reasoning model profile by default
+- Intake status endpoint correctly reflects baseline completion
+- Workspace settings endpoints (password change) enforce auth and validation
 
 ---
 

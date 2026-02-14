@@ -264,6 +264,27 @@ Adaptive intake is considered complete when:
 - Structured data stored deterministically
 - No full free-form AI transcript storage
 
+### 5.11 Intake Lifecycle + Main Workspace
+
+The intake lifecycle must support:
+- New user can start intake immediately after account + AI setup
+- New user can skip intake and do it later
+- Existing user can re-run/update intake at any time
+
+Main workspace requirements:
+- Menu-driven navigation with one view at a time (chat, intake, settings, usage)
+- Intake menu must show completion status (pending vs completed)
+- Clear guidance on how to run/update intake later from menu
+- After successful intake submit, route user to default chat view
+
+Settings requirements:
+- User can update AI configuration from settings menu
+- User can change password from settings menu
+
+Token usage requirements:
+- Track tokens per user/provider/model
+- Expose prompt/completion/total token counters and request counts
+
 ---
 
 # 6. Goal Definition Needs
@@ -480,5 +501,4 @@ UI must be:
 It is:
 
 A structured, adaptive longevity coaching system grounded in measurable data, guided experimentation, and multidisciplinary reasoning.
-
 

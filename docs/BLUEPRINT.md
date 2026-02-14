@@ -79,11 +79,15 @@ Ensure Render persistent disk mounted at /var/data
 
 POST /auth/signup
 POST /auth/login
+GET  /auth/session
 PUT  /auth/ai-config
 GET  /auth/ai-config
+PUT  /auth/change-password
+GET  /auth/model-usage
 POST /auth/model-options
 
 POST /intake/baseline
+GET  /intake/status
 POST /metrics
 GET  /dashboard/summary
 POST /integrations/apple-health/sync
@@ -192,6 +196,11 @@ Phase 1:
 - Deep-think submission toggle routes to deep thinker model
 - Model options include cost metadata when known
 - Utility-task routing defaults to utility model
+- Main workspace route with menu views (chat/intake/settings/usage)
+- Intake can be skipped at setup and completed/re-run later from workspace menu
+- Post-intake success routes user back to default chat
+- Settings menu includes AI config updates and password change
+- Per-model token usage stats are persisted and exposed
 - Auth
 - Baseline intake
 - Adaptive intake (goal/risk/engagement)
@@ -213,6 +222,5 @@ Phase 4:
 - Modular connector interface for third-party data sync
 - Apple Health normalized metric sync (planned)
 - Hume normalized signal sync (planned)
-
 
 

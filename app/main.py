@@ -12,6 +12,7 @@ from app.db.session import create_tables
 
 app = FastAPI(title="The Longevity Alchemist")
 ONBOARDING_PAGE = Path(__file__).resolve().parent / "static" / "onboarding.html"
+APP_PAGE = Path(__file__).resolve().parent / "static" / "app.html"
 
 
 @app.on_event("startup")
@@ -37,6 +38,11 @@ def api_root() -> dict[str, str]:
 @app.get("/onboarding")
 def onboarding() -> FileResponse:
     return FileResponse(ONBOARDING_PAGE)
+
+
+@app.get("/app")
+def app_shell() -> FileResponse:
+    return FileResponse(APP_PAGE)
 
 
 app.include_router(auth_router)

@@ -24,6 +24,7 @@ def test_onboarding_page_has_mobile_and_gating_contract(client) -> None:
     assert response.status_code == 200
     html = response.text
     assert "Start Intake" in html
+    assert "Skip For Now" in html
     assert "disabled" in html
     assert "@media (max-width: 900px)" in html
     assert "Trello" not in html  # style inspiration only, no brand copy.

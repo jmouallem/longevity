@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Longevity Alchemist Workspace</title>
+    <style>
+      :root {
+        --bg: #eef2f7;
+        --panel: #ffffff;
+        --ink: #1b2533;
+        --muted: #5f7082;
+        --accent: #0a78b8;
+        --accent2: #065f92;
+        --ok: #1f845a;
+        --warn: #ad5f00;
+        --error: #c9372c;
+        --border: #d9e4ee;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+        color: var(--ink);
+        background: radial-gradient(circle at 10% 10%, #f9fbff, var(--bg) 35%);
+      }
+      .shell { max-width: 960px; margin: 0 auto; padding: 1rem; }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: .8rem;
+      }
+      .title { margin: 0; font-size: clamp(1.1rem, 2vw, 1.8rem); }
+      .muted { margin: .2rem 0 0; color: var(--muted); font-size: .9rem; }
+      .menu {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: .45rem;
+        margin-bottom: .9rem;
+      }
+      button {
+        border: none;
+        border-radius: 9px;
+        padding: .6rem .75rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .menu button { background: #e7f0f8; color: #1f4a68; border: 1px solid #c6d9e8; }
+      .menu button.active { background: #d0e6f7; border-color: #9dc9e6; }
+      .logout { background: #f0f4f8; color: #27425b; border: 1px solid var(--border); }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(15, 42, 66, .08);
+        padding: .95rem;
+      }
+      .view { display: none; }
+      .view.active { display: block; }
+      .section-title { margin: .1rem 0 .35rem; font-size: 1rem; }
+      .field { display: grid; gap: .35rem; margin-bottom: .7rem; }
+      label { font-size: .85rem; color: #405469; }
+      input, select, textarea {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: .6rem .65rem;
+        font-size: .95rem;
+      }
+      textarea { min-height: 115px; resize: vertical; }
+      .row { display: flex; gap: .5rem; }
+      .row > * { flex: 1; }
+      .btn-primary { background: var(--accent); color: #fff; }
+      .btn-primary:hover { background: var(--accent2); }
+      .btn-ghost { background: #f3f6fa; color: #24384f; border: 1px solid var(--border); }
+      .notice { min-height: 1.2rem; font-size: .86rem; margin-top: .25rem; color: var(--muted); }
+      .notice.ok { color: var(--ok); }
+      .notice.warn { color: var(--warn); }
+      .notice.error { color: var(--error); }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .82rem;
+        padding: .2rem .45rem;
+        border-radius: 999px;
+        border: 1px solid #bfd6e8;
+        background: #ecf5fb;
+        color: #275372;
+      }
+      .status.ok { border-color: #b8decb; background: #e9f8ef; color: #1f6848; }
+      .status.warn { border-color: #e1d0b1; background: #fdf5e8; color: #8b5310; }
+      .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: .65rem; }
+      .chat-answer {
+        margin-top: .8rem;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #f8fbff;
+        padding: .7rem;
+      }
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: .4rem;
+      }
+      .table th, .table td {
+        border-bottom: 1px solid #e7edf4;
+        padding: .45rem;
+        text-align: left;
+        font-size: .86rem;
+      }
+      .hint { font-size: .84rem; color: var(--muted); margin-top: .3rem; }
+      @media (max-width: 900px) {
+        .menu { grid-template-columns: 1fr 1fr; }
+        .grid-2 { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="topbar">
+        <div>
+          <h1 class="title">Longevity Workspace</h1>
+          <p class="muted" id="welcome">Loading session...</p>
+        </div>
+        <button class="logout" id="logout">Log Out</button>
+      </div>
+
+      <div class="menu">
+        <button id="menu-chat" class="active">Chat</button>
+        <button id="menu-intake">Intake <span id="intake-badge" class="status warn">pending</span></button>
+        <button id="menu-settings">Settings</button>
+        <button id="menu-usage">Model Usage</button>
+      </div>
+
+      <section class="card">
+        <article id="view-chat" class="view active">
+          <h2 class="section-title">Default Chat</h2>
+          <p class="muted">Ask a coaching question anytime. Enable deep-think when needed.</p>
+          <div class="field"><label for="chat-question">Question</label><textarea id="chat-question" placeholder="How can I improve energy this week?"></textarea></div>
+          <div class="row">
+            <div class="field">
+              <label for="chat-mode">Mode</label>
+              <select id="chat-mode">
+                <option value="quick">quick</option>
+                <option value="deep">deep</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="chat-deep-think">Deep Thinker</label>
+              <select id="chat-deep-think">
+                <option value="false">off</option>
+                <option value="true">on for this question</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn-primary" id="chat-send">Send</button>
+            <button class="btn-ghost" id="chat-clear">Clear</button>
+          </div>
+          <div class="notice" id="chat-notice"></div>
+          <div id="chat-answer" class="chat-answer" style="display:none;"></div>
+        </article>
+
+        <article id="view-intake" class="view">
+          <h2 class="section-title">Baseline Intake</h2>
+          <p class="muted">You can complete this now, skip, or re-run later from this menu. Completing intake routes you back to chat.</p>
+          <div class="notice" id="intake-status"></div>
+          <div class="grid-2">
+            <div class="field"><label for="goal">Primary Goal</label><select id="goal"><option value="energy">energy</option><option value="heart_health">heart health</option><option value="longevity_optimization">longevity optimization</option><option value="weight_loss">weight loss</option><option value="mental_clarity">mental clarity</option></select></div>
+            <div class="field"><label for="activity">Activity Level</label><select id="activity"><option value="sedentary">sedentary</option><option value="light">light</option><option value="moderate" selected>moderate</option><option value="high">high</option><option value="athlete">athlete</option></select></div>
+            <div class="field"><label for="weight">Weight (kg)</label><input id="weight" type="number" step="0.1" value="80" /></div>
+            <div class="field"><label for="waist">Waist (cm)</label><input id="waist" type="number" step="0.1" value="92" /></div>
+            <div class="field"><label for="sbp">Systolic BP</label><input id="sbp" type="number" value="122" /></div>
+            <div class="field"><label for="dbp">Diastolic BP</label><input id="dbp" type="number" value="79" /></div>
+            <div class="field"><label for="rhr">Resting HR</label><input id="rhr" type="number" value="61" /></div>
+            <div class="field"><label for="sleep">Sleep Hours</label><input id="sleep" type="number" step="0.1" value="7.2" /></div>
+            <div class="field"><label for="energy">Energy (1-10)</label><input id="energy" type="number" min="1" max="10" value="7" /></div>
+            <div class="field"><label for="mood">Mood (1-10)</label><input id="mood" type="number" min="1" max="10" value="7" /></div>
+            <div class="field"><label for="stress">Stress (1-10)</label><input id="stress" type="number" min="1" max="10" value="4" /></div>
+            <div class="field"><label for="sleep-quality">Sleep Quality (1-10)</label><input id="sleep-quality" type="number" min="1" max="10" value="7" /></div>
+            <div class="field"><label for="motivation">Motivation (1-10)</label><input id="motivation" type="number" min="1" max="10" value="8" /></div>
+            <div class="field"><label for="engagement">Engagement Style</label><select id="engagement"><option value="">(optional)</option><option value="concise">concise</option><option value="detailed">detailed</option><option value="playful">playful</option><option value="serious">serious</option></select></div>
+          </div>
+          <div class="row">
+            <button class="btn-primary" id="intake-save">Save / Update Intake</button>
+            <button class="btn-ghost" id="intake-refresh">Refresh Status</button>
+          </div>
+          <div class="notice" id="intake-notice"></div>
+        </article>
+
+        <article id="view-settings" class="view">
+          <h2 class="section-title">Settings</h2>
+          <p class="muted">Update AI settings or change password from this menu at any time.</p>
+          <div class="grid-2">
+            <div>
+              <h3 class="section-title">AI Settings</h3>
+              <div class="field"><label for="provider">Provider</label><select id="provider"><option value="">Select provider</option><option value="openai">OpenAI (ChatGPT)</option><option value="gemini">Gemini</option></select></div>
+              <div class="field"><label for="api-key">API Key</label><input id="api-key" type="password" placeholder="Required for update" /></div>
+              <div class="field"><label for="deep-model">Deep Thinker Model</label><select id="deep-model"><option value="">Select model</option></select></div>
+              <div class="field"><label for="reason-model">Reasoning Model</label><select id="reason-model"><option value="">Select model</option></select></div>
+              <div class="field"><label for="utility-model">Utility Model</label><select id="utility-model"><option value="">Select model</option></select></div>
+              <div class="row"><button class="btn-primary" id="ai-save">Save AI Settings</button><button class="btn-ghost" id="ai-load">Load Current</button></div>
+              <div class="notice" id="ai-notice"></div>
+            </div>
+            <div>
+              <h3 class="section-title">Password</h3>
+              <div class="field"><label for="current-password">Current Password</label><input id="current-password" type="password" /></div>
+              <div class="field"><label for="new-password">New Password</label><input id="new-password" type="password" /></div>
+              <button class="btn-primary" id="password-save">Change Password</button>
+              <div class="notice" id="password-notice"></div>
+            </div>
+          </div>
+        </article>
+
+        <article id="view-usage" class="view">
+          <h2 class="section-title">Model Token Usage</h2>
+          <p class="muted">Token usage is tracked per user/provider/model for visibility and cost control.</p>
+          <button class="btn-ghost" id="usage-refresh">Refresh</button>
+          <table class="table" id="usage-table">
+            <thead><tr><th>Provider</th><th>Model</th><th>Requests</th><th>Prompt</th><th>Completion</th><th>Total</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="hint" id="usage-hint"></div>
+        </article>
+      </section>
+    </div>
+
+    <script>
+      const token = sessionStorage.getItem("access_token") || "";
+      if (!token) window.location.href = "/onboarding";
+
+      const el = (id) => document.getElementById(id);
+      const views = ["chat", "intake", "settings", "usage"];
+
+      function authHeaders() {
+        return { "Authorization": "Bearer " + token, "Content-Type": "application/json" };
+      }
+
+      function setNotice(id, text, kind) {
+        const node = el(id);
+        node.textContent = text || "";
+        node.className = "notice" + (kind ? " " + kind : "");
+      }
+
+      function showView(name) {
+        views.forEach((v) => {
+          el("view-" + v).classList.toggle("active", v === name);
+          el("menu-" + v).classList.toggle("active", v === name);
+        });
+      }
+
+      async function loadSession() {
+        const res = await fetch("/auth/session", { headers: { "Authorization": "Bearer " + token } });
+        if (!res.ok) {
+          sessionStorage.removeItem("access_token");
+          window.location.href = "/onboarding";
+          return;
+        }
+        const body = await res.json();
+        el("welcome").textContent = "Signed in as " + body.email;
+      }
+
+      function modelLabel(entry) {
+        if (!entry.cost_known) return entry.model + " (cost n/a)";
+        return entry.model + " ($" + Number(entry.input_cost_per_1m_usd).toFixed(2) + "/$" + Number(entry.output_cost_per_1m_usd).toFixed(2) + " per 1M)";
+      }
+
+      function renderModels(selectId, options, selected) {
+        const node = el(selectId);
+        node.innerHTML = '<option value="">Select model</option>';
+        options.forEach((entry) => {
+          const opt = document.createElement("option");
+          opt.value = entry.model;
+          opt.textContent = modelLabel(entry);
+          node.appendChild(opt);
+        });
+        if (selected) node.value = selected;
+      }
+
+      async function loadModelOptions() {
+        const provider = el("provider").value;
+        const apiKey = el("api-key").value.trim();
+        if (!provider || !apiKey) return;
+        setNotice("ai-notice", "Validating key and loading models...", "");
+        const res = await fetch("/auth/model-options", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ ai_provider: provider, ai_api_key: apiKey })
+        });
+        if (!res.ok) {
+          setNotice("ai-notice", "Could not validate key/models.", "error");
+          return;
+        }
+        const body = await res.json();
+        if (body.source !== "provider_api") {
+          setNotice("ai-notice", "Provider key validation failed.", "error");
+          return;
+        }
+        const opts = Array.isArray(body.model_options) ? body.model_options : [];
+        renderModels("deep-model", opts, body.default_deep_thinker_model);
+        renderModels("reason-model", opts, body.default_reasoning_model);
+        renderModels("utility-model", opts, body.default_utility_model);
+        setNotice("ai-notice", "Model catalog loaded.", "ok");
+      }
+
+      async function loadAiConfig() {
+        const res = await fetch("/auth/ai-config", { headers: { "Authorization": "Bearer " + token } });
+        if (!res.ok) {
+          setNotice("ai-notice", "AI config not set yet.", "warn");
+          return;
+        }
+        const body = await res.json();
+        el("provider").value = body.ai_provider || "";
+        renderModels("deep-model", [], body.ai_deep_thinker_model);
+        renderModels("reason-model", [], body.ai_reasoning_model);
+        renderModels("utility-model", [], body.ai_utility_model);
+        setNotice("ai-notice", "Loaded current AI config. Enter API key to re-validate/select models.", "warn");
+      }
+
+      async function saveAiConfig() {
+        const payload = {
+          ai_provider: el("provider").value,
+          ai_deep_thinker_model: el("deep-model").value,
+          ai_reasoning_model: el("reason-model").value,
+          ai_utility_model: el("utility-model").value,
+          ai_api_key: el("api-key").value.trim()
+        };
+        if (!payload.ai_provider || !payload.ai_deep_thinker_model || !payload.ai_reasoning_model || !payload.ai_utility_model || !payload.ai_api_key) {
+          setNotice("ai-notice", "Provider, key, and all three model slots are required.", "error");
+          return;
+        }
+        const res = await fetch("/auth/ai-config", {
+          method: "PUT",
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          setNotice("ai-notice", "Could not save AI settings.", "error");
+          return;
+        }
+        el("api-key").value = "";
+        setNotice("ai-notice", "AI settings updated.", "ok");
+      }
+
+      async function loadIntakeStatus() {
+        const res = await fetch("/intake/status", { headers: { "Authorization": "Bearer " + token } });
+        if (!res.ok) {
+          setNotice("intake-status", "Could not load intake status.", "error");
+          return;
+        }
+        const body = await res.json();
+        if (body.baseline_completed) {
+          el("intake-badge").textContent = "completed";
+          el("intake-badge").className = "status ok";
+          setNotice("intake-status", "Intake completed. You can update it anytime from this menu.", "ok");
+        } else {
+          el("intake-badge").textContent = "pending";
+          el("intake-badge").className = "status warn";
+          setNotice("intake-status", "Intake not completed yet. You can skip for now and run later from this menu.", "warn");
+        }
+      }
+
+      async function submitIntake() {
+        const payload = {
+          primary_goal: el("goal").value,
+          weight: Number(el("weight").value),
+          waist: Number(el("waist").value),
+          systolic_bp: Number(el("sbp").value),
+          diastolic_bp: Number(el("dbp").value),
+          resting_hr: Number(el("rhr").value),
+          sleep_hours: Number(el("sleep").value),
+          activity_level: el("activity").value,
+          energy: Number(el("energy").value),
+          mood: Number(el("mood").value),
+          stress: Number(el("stress").value),
+          sleep_quality: Number(el("sleep-quality").value),
+          motivation: Number(el("motivation").value),
+          engagement_style: el("engagement").value || null
+        };
+        setNotice("intake-notice", "Saving intake...", "");
+        const res = await fetch("/intake/baseline", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("intake-notice", body.detail || "Failed to save intake.", "error");
+          return;
+        }
+        setNotice("intake-notice", "Intake saved. Redirecting to default chat.", "ok");
+        await loadIntakeStatus();
+        showView("chat");
+      }
+
+      async function sendChat() {
+        const question = el("chat-question").value.trim();
+        if (!question) {
+          setNotice("chat-notice", "Enter a question first.", "error");
+          return;
+        }
+        setNotice("chat-notice", "Generating response...", "");
+        const res = await fetch("/coach/question", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            question,
+            mode: el("chat-mode").value,
+            deep_think: el("chat-deep-think").value === "true"
+          })
+        });
+        if (!res.ok) {
+          setNotice("chat-notice", "Chat request failed.", "error");
+          return;
+        }
+        const body = await res.json();
+        const out = el("chat-answer");
+        out.style.display = "block";
+        out.innerHTML = "<strong>Answer</strong><p>" + body.answer + "</p>"
+          + "<strong>Suggested Questions</strong><ul>" + (body.suggested_questions || []).map((q) => "<li>" + q + "</li>").join("") + "</ul>";
+        setNotice("chat-notice", "Response ready.", "ok");
+      }
+
+      async function changePassword() {
+        const payload = {
+          current_password: el("current-password").value,
+          new_password: el("new-password").value
+        };
+        if (!payload.current_password || !payload.new_password) {
+          setNotice("password-notice", "Current and new password are required.", "error");
+          return;
+        }
+        const res = await fetch("/auth/change-password", {
+          method: "PUT",
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (res.status === 204) {
+          el("current-password").value = "";
+          el("new-password").value = "";
+          setNotice("password-notice", "Password updated.", "ok");
+          return;
+        }
+        const body = await res.json().catch(() => ({}));
+        setNotice("password-notice", body.detail || "Password update failed.", "error");
+      }
+
+      async function loadUsage() {
+        const res = await fetch("/auth/model-usage", { headers: { "Authorization": "Bearer " + token } });
+        if (!res.ok) {
+          el("usage-hint").textContent = "Could not load usage.";
+          return;
+        }
+        const body = await res.json();
+        const tbody = el("usage-table").querySelector("tbody");
+        tbody.innerHTML = "";
+        const items = body.items || [];
+        if (!items.length) {
+          el("usage-hint").textContent = "No model usage yet. Ask a chat question to generate usage.";
+          return;
+        }
+        items.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = "<td>" + item.provider + "</td><td>" + item.model + "</td><td>" + item.request_count + "</td><td>" + item.prompt_tokens + "</td><td>" + item.completion_tokens + "</td><td>" + item.total_tokens + "</td>";
+          tbody.appendChild(tr);
+        });
+        el("usage-hint").textContent = "Rows are aggregated by provider/model for your account.";
+      }
+
+      el("menu-chat").addEventListener("click", () => showView("chat"));
+      el("menu-intake").addEventListener("click", () => showView("intake"));
+      el("menu-settings").addEventListener("click", () => showView("settings"));
+      el("menu-usage").addEventListener("click", async () => { showView("usage"); await loadUsage(); });
+      el("logout").addEventListener("click", () => { sessionStorage.removeItem("access_token"); window.location.href = "/onboarding"; });
+      el("chat-send").addEventListener("click", sendChat);
+      el("chat-clear").addEventListener("click", () => { el("chat-question").value = ""; setNotice("chat-notice", "", ""); });
+      el("intake-save").addEventListener("click", submitIntake);
+      el("intake-refresh").addEventListener("click", loadIntakeStatus);
+      el("ai-load").addEventListener("click", loadAiConfig);
+      el("provider").addEventListener("change", loadModelOptions);
+      el("api-key").addEventListener("input", () => { if (el("api-key").value.trim().length > 7) loadModelOptions(); });
+      el("ai-save").addEventListener("click", saveAiConfig);
+      el("password-save").addEventListener("click", changePassword);
+      el("usage-refresh").addEventListener("click", loadUsage);
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        const target = event.target;
+        if (target && target.tagName === "TEXTAREA") {
+          if (event.shiftKey) return;
+          event.preventDefault();
+          if (el("view-chat").classList.contains("active")) sendChat();
+          return;
+        }
+        if (event.shiftKey) return;
+        if (el("view-chat").classList.contains("active")) {
+          event.preventDefault();
+          sendChat();
+        }
+      });
+
+      async function init() {
+        await loadSession();
+        await loadIntakeStatus();
+        await loadAiConfig();
+        if ((window.location.hash || "").toLowerCase() === "#intake") {
+          showView("intake");
+        }
+      }
+      init();
+    </script>
+  </body>
+</html>
