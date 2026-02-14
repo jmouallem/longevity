@@ -1,0 +1,33 @@
+# VCS and metadata
+.git
+.gitignore
+
+# Local Python/runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+ENV/
+
+# Local data and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+/var/data/
+
+# Tests and docs not required in runtime image
+tests/
+docs/
+codex/
+
+# Editor/OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
