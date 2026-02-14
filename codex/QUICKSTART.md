@@ -1,4 +1,4 @@
-﻿# Quickstart For Codex Sessions
+# Quickstart For Codex Sessions
 
 ## Goal
 Start fast with minimal context while preserving slice discipline.

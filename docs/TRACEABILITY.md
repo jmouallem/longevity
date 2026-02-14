@@ -1,4 +1,4 @@
-﻿# Traceability Matrix
+# Traceability Matrix
 
 ## Purpose
 This document maps `docs/USERNEEDS.md` requirements to implementation slices/phases so coverage and gaps are explicit.
@@ -26,7 +26,11 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 | 2 Target Audience | General + advanced users, mobile/desktop | Roadmap Phases 1, 6, 8 | Planned | Mostly product/UI scope, not yet in backend-only slices. |
 | 3 Core Experience Principles | Scientific, data-driven, supportive, non-medical | Slices 2-3 | Partial | Tone/safety present in Slice 3; broader UX/tone adaptation in later phases. |
 | 4 Privacy & Data | Auth, isolation, server-side AI, no image/audio storage | Slice 1 + Slice 3 + guardrails | Partial | Auth and server-side AI included; media handling constraints enforced as out-of-scope in early slices. |
+| 4.1 BYOK AI Provider Config | Per-user provider/model/API key setup with secure storage and masking | Slice 1 + Slice 3 | Partial | Config is captured in auth/onboarding; coaching routes use authenticated user's provider config. |
+| 4.2 External Connector Architecture | Modular provider adapters with normalized sync into internal datasets | Roadmap Phase 5 | Planned | Explicitly deferred; design requires provider abstraction, per-user consent/auth, and incremental sync. |
 | 5 Baseline Establishment | Objective + subjective intake + derived outputs | Slice 1 + Slice 2 | Partial | Baseline capture in Slice 1; derived scoring begins in Slice 2. Optional labs/meds/supplements are later scope. |
+| 5.4 Adaptive Intake Experience | Goal/risk/engagement adaptive intake with hybrid required+optional modules and intake persona | Slice 1 (foundational) + later enhancements in Phases 1-2 | Partial | Required core capture is in Slice 1 scope; focus-area highlights can be produced without numeric scoring. Full adaptive logic, motivational framing, and numeric completion outputs are progressively delivered. |
+| 5.11 Conversational/Multimodal Intake (Future) | Intake can run as conversation later (text/voice), while preserving deterministic structured storage | Roadmap Phase 5 | Planned | Explicitly deferred; current intake remains structured + adaptive text flow. |
 | 6 Goal Definition | Measurable goals and timeline guidance | Roadmap Phases 2-4 | Planned | Not in Slices 1-4 contracts. |
 | 7 Personalized Planning | Step-by-step nutrition/exercise/sleep/stress/supplements | Slice 3 + Roadmap Phases 2-4 | Partial | Initial coaching endpoint in Slice 3; full planning system later. |
 | 8 Multi-Disciplinary Reasoning | Domain agents + synthesis + confidence | Roadmap Phase 2 | Planned | Explicitly out-of-scope for Slice 3 (single-call only). |
@@ -65,3 +69,5 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 - Priority of goals subsystem (before or after multi-agent phase).
 - Whether supplement/medication baseline fields should move into a near-term slice.
 - Minimum dashboard requirements for MVP release gate.
+
+

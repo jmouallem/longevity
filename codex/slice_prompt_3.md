@@ -1,4 +1,4 @@
-﻿# 🧪 SLICE PROMPT — The Longevity Alchemist (Slice #3)
+# SLICE PROMPT  The Longevity Alchemist (Slice #3)
 
 You are implementing a small vertical slice for The Longevity Alchemist.
 
@@ -9,14 +9,14 @@ Keep changes minimal and testable.
 
 ---
 
-# 🎯 Slice Goal
+# Slice Goal
 
 Implement the **first coaching endpoint** using a **single LLM call** (no multi-agent council yet).
 
 This slice must allow an authenticated user to:
-1) ask a coaching question (e.g., “what next?”, “what should I eat for lunch?”, “I’m tired”),
+1) ask a coaching question (e.g., what next?, what should I eat for lunch?, Im tired),
 2) receive a contextual answer based on stored baseline + recent metrics + latest scores,
-3) receive suggested “next best questions” (guided prompts),
+3) receive suggested next best questions (guided prompts),
 4) store a compact conversation summary in SQLite.
 
 No meal photo handling.
@@ -27,7 +27,7 @@ No experiments engine.
 
 ---
 
-# 📦 What This Slice Must Include
+# What This Slice Must Include
 
 ## A) Coaching Q&A Endpoint (Authenticated)
 
@@ -37,13 +37,13 @@ No experiments engine.
 ### Request Body (Pydantic)
 - question: string (required)
 - mode: enum ["quick","deep"] (optional, default "quick")
-- context_hint: string (optional) (user may specify “lunch”, “sleep”, “training”, etc.)
+- context_hint: string (optional) (user may specify lunch, sleep, training, etc.)
 
 ### Response Body
 - answer: string
-- rationale_bullets: string[] (3–7 bullets, plain language)
-- recommended_actions: { title: string, steps: string[] }[] (1–3 items)
-- suggested_questions: string[] (3–8 items)
+- rationale_bullets: string[] (37 bullets, plain language)
+- recommended_actions: { title: string, steps: string[] }[] (13 items)
+- suggested_questions: string[] (38 items)
 - safety_flags: string[] (0+ items)
 - disclaimer: string (always present, short)
 
@@ -69,9 +69,17 @@ Rules:
 ## C) LLM Service (Server-Side Only)
 
 - Add an LLM client module (if not present) in `app/services/llm.py`
-- Must read API key from env var (e.g., OPENAI_API_KEY)
+- Must read provider/model/key from authenticated user's saved AI config when available
 - Must never expose key to client
 - Must handle timeouts and failures gracefully
+
+Provider support (minimum):
+- OpenAI (ChatGPT models)
+- Gemini
+
+Fallback behavior:
+- If per-user key is missing/invalid, return actionable setup guidance
+- Env-level fallback keys may be supported for controlled dev/admin use only
 
 **LLM Call Style**
 - Single call per request
@@ -98,12 +106,12 @@ Persona must be applied in a **single wrapper** function so internal logic remai
 Implement a minimal safety layer that:
 - scans user question for urgent symptoms (e.g., chest pain, fainting, stroke signs)
 - if detected:
-  - return a “seek professional care / emergency services” response
+  - return a seek professional care / emergency services response
   - do NOT attempt to diagnose
 
 Also ensure supplement-related guidance includes:
 - short caution statement
-- “check with clinician if on meds / conditions” style warning
+- check with clinician if on meds / conditions style warning
 
 ---
 
@@ -132,13 +140,13 @@ Suggested questions should be derived from:
 - missing data (e.g., no BP data)
 - recent negative trends
 - goal alignment
-- common next steps (“Want lunch options?”, “Want a sleep optimization plan?”)
+- common next steps (Want lunch options?, Want a sleep optimization plan?)
 
 This can be produced by the LLM output contract, but must exist even on fallback.
 
 ---
 
-# 🚫 Out of Scope (Critical)
+# Out of Scope (Critical)
 
 You MUST NOT:
 
@@ -148,12 +156,12 @@ You MUST NOT:
 - Implement meal photo endpoints
 - Implement voice endpoints
 - Implement research ingestion / PubMed
-- Refactor metrics/scoring logic beyond what’s required to build context
+- Refactor metrics/scoring logic beyond whats required to build context
 - Add a front-end UI
 
 ---
 
-# 📂 Files Allowed to Change
+# Files Allowed to Change
 
 You may only modify or create:
 
@@ -173,7 +181,7 @@ STOP and explain why before proceeding.
 
 ---
 
-# 🗄 Database Constraints
+# Database Constraints
 
 - SQLite only
 - DB path: /var/data/longevity.db
@@ -187,7 +195,7 @@ Index:
 
 ---
 
-# 🧪 Tests (Minimum)
+# Tests (Minimum)
 
 Add minimal tests to verify:
 - unauthorized cannot call POST /coach/question
@@ -200,7 +208,7 @@ Mock LLM call in tests (do not call external network).
 
 ---
 
-# 🧪 Acceptance Criteria
+# Acceptance Criteria
 
 This slice is complete when:
 
@@ -215,7 +223,7 @@ This slice is complete when:
 
 ---
 
-# 🧪 Verification Steps
+# Verification Steps
 
 After implementation provide:
 
@@ -239,7 +247,7 @@ After implementation provide:
 
 ---
 
-# 📏 Implementation Requirements
+# Implementation Requirements
 
 - Production-grade code
 - Pydantic request/response models
@@ -250,7 +258,7 @@ After implementation provide:
 
 ---
 
-# 📋 Deliverables Format
+# Deliverables Format
 
 You must respond with:
 
@@ -262,7 +270,7 @@ You must respond with:
 
 ---
 
-# 🧘 Reminder
+# Reminder
 
 This slice is single-call coaching only.
 No multi-agent council.
@@ -271,7 +279,7 @@ No experiments.
 No research ingestion.
 Keep it tight and deployable.
 
-—----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
 
 
 

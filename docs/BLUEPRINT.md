@@ -1,8 +1,8 @@
-﻿# 🧪 The Longevity Alchemist — Implementation Blueprint
+# The Longevity Alchemist  Implementation Blueprint
 
-Backend: Python 3.11 + FastAPI  
-Database: SQLite  
-Deployment: Docker + Render  
+Backend: Python 3.11 + FastAPI
+Database: SQLite
+Deployment: Docker + Render
 
 ---
 
@@ -33,6 +33,10 @@ Deployment: Docker + Render
         synthesis.py
     /services
         llm.py
+        connectors/
+            apple_health.py
+            hume.py
+            base.py
         vision.py
         speech.py
         research.py
@@ -50,14 +54,15 @@ render.yaml
 
 # 2. Core Dependencies
 
-fastapi  
-uvicorn  
-sqlalchemy  
-pydantic  
-python-jose  
-passlib  
-httpx  
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+python-jose
+passlib
+httpx
 openai (or LLM SDK)
+google-generativeai (Gemini SDK)
 
 ---
 
@@ -72,19 +77,23 @@ Ensure Render persistent disk mounted at /var/data
 
 # 4. Core API Routes
 
-POST /auth/signup  
-POST /auth/login  
+POST /auth/signup
+POST /auth/login
+PUT  /auth/ai-config
+GET  /auth/ai-config
 
-POST /intake/baseline  
-POST /metrics  
-GET  /dashboard/summary  
+POST /intake/baseline
+POST /metrics
+GET  /dashboard/summary
+POST /integrations/apple-health/sync
+POST /integrations/hume/sync
 
-POST /coach/question  
-POST /coach/meal-photo  
-POST /coach/voice  
+POST /coach/question
+POST /coach/meal-photo
+POST /coach/voice
 
-GET  /experiments  
-POST /experiments  
+GET  /experiments
+POST /experiments
 
 ---
 
@@ -173,8 +182,10 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
 # 10. MVP Slice
 
 Phase 1:
+- Per-user provider configuration (OpenAI/Gemini) + encrypted BYOK storage
 - Auth
 - Baseline intake
+- Adaptive intake (goal/risk/engagement)
 - Manual metrics entry
 - Simple coaching endpoint
 - Domain score display
@@ -188,5 +199,13 @@ Phase 3:
 - PubMed ingestion
 - Research toggles
 - Advanced experiment analytics
+
+Phase 4:
+- Modular connector interface for third-party data sync
+- Apple Health normalized metric sync (planned)
+- Hume normalized signal sync (planned)
+
+
+
 
 

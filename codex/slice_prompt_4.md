@@ -1,4 +1,4 @@
-﻿# 🧪 SLICE PROMPT — The Longevity Alchemist (Slice 4: AI Testing Harness)
+# SLICE PROMPT  The Longevity Alchemist (Slice 4: AI Testing Harness)
 
 You are implementing a testing harness pattern for AI-heavy builds.
 
@@ -9,7 +9,7 @@ Keep changes minimal and testable.
 
 ---
 
-# 🎯 Slice Goal
+# Slice Goal
 
 Add a deterministic, offline testing harness for AI-backed endpoints (starting with Slice #3 `/coach/question`).
 
@@ -24,7 +24,7 @@ No new runtime features beyond enabling dependency injection hooks needed for te
 
 ---
 
-# 📦 What This Slice Must Include
+# What This Slice Must Include
 
 ## A) Test Tooling
 - Add pytest if not present
@@ -83,15 +83,15 @@ Add unit tests for:
 
 ## G) API Tests (Mocked LLM)
 Add API tests for `/coach/question`:
-- unauthorized → 401
-- baseline missing → asks for baseline / returns safe shape
-- OK fixture → returns response with required fields
-- MALFORMED_JSON fixture → returns fallback response shape
-- safety phrase → returns escalation response (LLM not used or overridden by safety)
+- unauthorized ? 401
+- baseline missing ? asks for baseline / returns safe shape
+- OK fixture ? returns response with required fields
+- MALFORMED_JSON fixture ? returns fallback response shape
+- safety phrase ? returns escalation response (LLM not used or overridden by safety)
 
 ---
 
-# 🚫 Out of Scope (Critical)
+# Out of Scope (Critical)
 
 You MUST NOT:
 - Add multi-agent council
@@ -106,7 +106,7 @@ Only add minimal DI hooks required to mock LLM client and DB if necessary.
 
 ---
 
-# 📂 Files Allowed to Change
+# Files Allowed to Change
 
 You may only modify or create:
 
@@ -129,7 +129,7 @@ STOP and explain why before proceeding.
 
 ---
 
-# 🧪 Acceptance Criteria
+# Acceptance Criteria
 
 This slice is complete when:
 
@@ -143,7 +143,7 @@ This slice is complete when:
 
 ---
 
-# 🧪 Verification Steps
+# Verification Steps
 
 After implementation provide:
 
@@ -158,7 +158,7 @@ After implementation provide:
 
 ---
 
-# 📏 Implementation Requirements
+# Implementation Requirements
 
 - Keep diffs minimal
 - Deterministic fixtures
@@ -168,7 +168,7 @@ After implementation provide:
 
 ---
 
-# 📋 Deliverables Format
+# Deliverables Format
 
 You must respond with:
 
@@ -180,7 +180,7 @@ You must respond with:
 
 ---
 
-# 🧘 Reminder
+# Reminder
 
 This slice is only the testing harness.
 No new features beyond DI hooks required for testing.

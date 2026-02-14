@@ -1,4 +1,4 @@
-﻿# 🧪 The Longevity Alchemist — System Architecture
+# The Longevity Alchemist  System Architecture
 
 ## 1. Overview
 
@@ -22,13 +22,13 @@ External services (LLM, speech-to-text, vision, optional web search) are accesse
 ## 2. High-Level Architecture
 
 Client (Browser)
-    ↓ HTTPS
+    ? HTTPS
 Single Docker Container (Render Web Service)
-    ├── FastAPI Backend
-    ├── AI Council Orchestrator
-    ├── SQLite Database (Persistent Disk)
-    ├── Local Background Jobs
-    └── External AI Service Clients
+    +-- FastAPI Backend
+    +-- AI Council Orchestrator
+    +-- SQLite Database (Persistent Disk)
+    +-- Local Background Jobs
+    +-- External AI Service Clients
 
 ---
 

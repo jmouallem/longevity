@@ -1,7 +1,7 @@
-﻿# 🧭 Drift Detection Checklist
+# Drift Detection Checklist
 ## The Longevity Alchemist (Vibe Coding Guardrails)
 
-Use this checklist after every Codex CLI session (or before you merge) to catch “drift”:
+Use this checklist after every Codex CLI session (or before you merge) to catch drift:
 scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 
 ---
@@ -9,15 +9,15 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 # 1) Scope Drift (Did we build more than we intended?)
 
 - [ ] The change matches the Slice Goal exactly (no extra features).
-- [ ] “Out of Scope” items were not implemented.
+- [ ] Out of Scope items were not implemented.
 - [ ] No new endpoints were added beyond what the slice required.
 - [ ] No new tables/models were added beyond what the slice required.
-- [ ] No “future-proof” abstractions were introduced “just in case.”
+- [ ] No future-proof abstractions were introduced just in case.
 - [ ] No unrelated refactors were included (naming, formatting, reorganizing).
-- [ ] Files changed match the “Files Allowed to Change” list.
+- [ ] Files changed match the Files Allowed to Change list.
 
 **Red flags**
-- “While I was here…” changes
+- While I was here changes
 - broad renames/moves
 - new frameworks introduced without request
 
@@ -33,7 +33,7 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 ## Data Persistence
 - [ ] SQLite path is still `/var/data/longevity.db` (or configured path).
 - [ ] Writes/reads use the DB access layer consistently.
-- [ ] No “in-memory-only” critical state introduced.
+- [ ] No in-memory-only critical state introduced.
 
 ## Media Rules
 - [ ] No image storage (only structured results stored).
@@ -73,10 +73,10 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 - [ ] System does NOT diagnose emergencies.
 - [ ] Supplement guidance includes safety cautions and contraindication awareness.
 - [ ] User override logic explains consequences and monitoring.
-- [ ] No “overconfident” medical claims were introduced.
+- [ ] No overconfident medical claims were introduced.
 
 **Red flags**
-- “This will fix your condition”
+- This will fix your condition
 - dosage advice without warnings
 - no escalation guidance for urgent symptoms
 
@@ -96,10 +96,10 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 
 # 6) Complexity Drift (Did we over-engineer?)
 
-- [ ] New abstractions were introduced only if used by ≥ 2 features.
-- [ ] New “frameworks” were not introduced unnecessarily.
+- [ ] New abstractions were introduced only if used by = 2 features.
+- [ ] New frameworks were not introduced unnecessarily.
 - [ ] Code remains readable and simple.
-- [ ] No giant “god classes” or “manager” objects appeared.
+- [ ] No giant god classes or manager objects appeared.
 - [ ] Business logic is separated from transport (API layer vs core logic).
 
 **Red flags**
@@ -118,7 +118,7 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 - [ ] New behavior has at least one deterministic test.
 
 **Red flags**
-- “We’ll add tests later”
+- Well add tests later
 - integration tests calling the real LLM on every run
 
 ---
@@ -127,7 +127,7 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 
 - [ ] No unbounded queries (especially metrics/time-series).
 - [ ] Pagination exists where needed.
-- [ ] Context builder summarizes (doesn’t dump huge raw history).
+- [ ] Context builder summarizes (doesnt dump huge raw history).
 - [ ] LLM context is compact and relevant.
 
 ---
@@ -137,11 +137,11 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 - [ ] Responses include practical next actions.
 - [ ] Suggested next questions are present (guided questioning).
 - [ ] Tone remains warm and supportive (no shame).
-- [ ] The system is still “scientific coach,” not “generic advice bot.”
+- [ ] The system is still scientific coach, not generic advice bot.
 
 ---
 
-# 10) Quick “Diff Smell Test” (Fast check)
+# 10) Quick Diff Smell Test (Fast check)
 
 When you look at the git diff, verify:
 
@@ -153,7 +153,7 @@ When you look at the git diff, verify:
 
 ---
 
-# 🚨 What To Do If You Detect Drift
+# What To Do If You Detect Drift
 
 If any box fails:
 
@@ -169,7 +169,7 @@ If any box fails:
 
 ---
 
-# ✅ “Ready to Merge” Gate
+# ? Ready to Merge Gate
 
 You may merge only if:
 

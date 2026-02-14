@@ -1,4 +1,4 @@
-﻿# 🧪 SLICE PROMPT — The Longevity Alchemist (Slice #2)
+# SLICE PROMPT  The Longevity Alchemist (Slice #2)
 
 You are implementing a small vertical slice for The Longevity Alchemist.
 
@@ -9,7 +9,7 @@ Keep changes minimal and testable.
 
 ---
 
-# 🎯 Slice Goal
+# Slice Goal
 
 Implement metric logging (time-series) and basic scoring (domain + composite) with a dashboard summary endpoint.
 
@@ -26,7 +26,7 @@ NO photo/voice yet.
 
 ---
 
-# 📦 What This Slice Must Include
+# What This Slice Must Include
 
 ## A) Metrics (Time-Series)
 
@@ -70,7 +70,7 @@ Storage:
 ## B) Scoring (MVP, Transparent, Simple)
 
 ### Domain Scores (required)
-Compute a score in range 0–100 for:
+Compute a score in range 0100 for:
 - sleep_score
 - metabolic_score
 - recovery_score
@@ -96,7 +96,7 @@ Metabolic Score:
 - based on BP and waist and weight trend (last 30 days) if present
 
 Recovery Score:
-- based on stress + sleep + resting HR trend (last 7–14 days)
+- based on stress + sleep + resting HR trend (last 714 days)
 
 Behavioral Score:
 - based on logging consistency (days with at least N metrics logged in last 7 days)
@@ -122,7 +122,7 @@ The endpoint should compute scores on demand if missing or stale.
 
 ---
 
-# 🚫 Out of Scope (Critical)
+# Out of Scope (Critical)
 
 You MUST NOT:
 
@@ -137,7 +137,7 @@ You MUST NOT:
 
 ---
 
-# 📂 Files Allowed to Change
+# Files Allowed to Change
 
 You may only modify or create:
 
@@ -155,7 +155,7 @@ STOP and explain why before proceeding.
 
 ---
 
-# 🗄 Database Constraints
+# Database Constraints
 
 - SQLite only
 - DB path: /var/data/longevity.db
@@ -172,21 +172,21 @@ Constraints:
 
 ---
 
-# 🧪 Tests (Minimum)
+# Tests (Minimum)
 
 Add minimal tests that verify:
 - unauthorized cannot POST/GET metrics
 - authenticated user can POST metrics
 - metric validation rejects invalid types/ranges
 - dashboard summary returns expected structure
-- scoring returns values 0–100 and composite is computed
+- scoring returns values 0100 and composite is computed
 
-Use the repo’s existing test framework (pytest recommended).
-If no test framework exists yet, add pytest minimally and include 2–4 key tests.
+Use the repos existing test framework (pytest recommended).
+If no test framework exists yet, add pytest minimally and include 24 key tests.
 
 ---
 
-# 🧪 Acceptance Criteria
+# Acceptance Criteria
 
 This slice is complete when:
 
@@ -201,7 +201,7 @@ This slice is complete when:
 
 ---
 
-# 🧪 Verification Steps
+# Verification Steps
 
 After implementation provide:
 
@@ -227,7 +227,7 @@ After implementation provide:
 
 ---
 
-# 📏 Implementation Requirements
+# Implementation Requirements
 
 - Production-grade code
 - Pydantic models for requests/responses
@@ -238,7 +238,7 @@ After implementation provide:
 
 ---
 
-# 📋 Deliverables Format
+# Deliverables Format
 
 You must respond with:
 
@@ -250,7 +250,7 @@ You must respond with:
 
 ---
 
-# 🧘 Reminder
+# Reminder
 
 Small vertical slice.
 No AI.
@@ -259,7 +259,7 @@ No experiments.
 Just metrics + scoring + dashboard summary API.
 
 
-—----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------
 
 
 

@@ -1,9 +1,9 @@
-﻿# 🧪 The Longevity Alchemist  
+# The Longevity Alchemist
 ## User Needs Checklist
 
 ---
 
-# 1️⃣ Core Purpose
+# 1?? Core Purpose
 
 - [ ] System establishes structured health baseline
 - [ ] System helps define measurable longevity goals
@@ -15,7 +15,7 @@
 
 ---
 
-# 2️⃣ Privacy & Infrastructure
+# 2?? Privacy & Infrastructure
 
 - [ ] Multi-user authentication implemented
 - [ ] User data isolated per account
@@ -26,10 +26,21 @@
 - [ ] No audio storage (transcript only)
 - [ ] LLM API keys never exposed client-side
 - [ ] All AI calls handled server-side
+- [ ] User can configure AI provider/model/key per account
+- [ ] OpenAI (ChatGPT) and Gemini are supported
+- [ ] User AI keys are encrypted at rest
+- [ ] User AI keys are masked in responses and never logged
+- [ ] User can rotate/revoke AI key
+- [ ] Coaching uses the authenticated user's configured provider/model
+- [ ] External connectors use modular provider adapters (not hard-coded provider logic in core domain)
+- [ ] Per-user consent/auth enforced for each external connector
+- [ ] Synced provider data is normalized into internal structured metrics
+- [ ] Incremental sync supported (no full re-import required each run)
+- [ ] Provider sync failures degrade gracefully (no app-wide outage)
 
 ---
 
-# 3️⃣ Baseline Intake
+# 3?? Baseline Intake
 
 ## Objective Data
 - [ ] Weight captured
@@ -59,9 +70,23 @@
 
 - [ ] Intake adapts with follow-up questions when needed
 
+
+## Adaptive Intake Experience
+- [ ] Intake starts with a goal-identification question
+- [ ] Goal-based adaptive depth is applied
+- [ ] Risk-based clarifying prompts trigger for high-risk baseline values
+- [ ] Engagement style adaptation works (concise vs deep)
+- [ ] Intake tone starts neutral/professional and adapts safely
+- [ ] Required structured core is always captured
+- [ ] Optional modules remain optional and goal-triggered
+- [ ] Motivational framing is shown before completion
+- [ ] Data-use transparency and non-diagnostic boundary are shown
+- [ ] Intake completion summary is generated
+- [ ] Post-intake focus areas highlighted without requiring numeric scores
+- [ ] No full free-form intake transcript is stored
 ---
 
-# 4️⃣ Goal Definition
+# 4?? Goal Definition
 
 - [ ] System translates vague goals into measurable targets
 - [ ] Timeline estimates provided
@@ -71,7 +96,7 @@
 
 ---
 
-# 5️⃣ Personalized Plan Generation
+# 5?? Personalized Plan Generation
 
 - [ ] Nutrition guidance generated
 - [ ] Exercise guidance generated
@@ -83,7 +108,7 @@
 
 ---
 
-# 6️⃣ Multi-Modal Input
+# 6?? Multi-Modal Input
 
 - [ ] Text input supported
 - [ ] Voice input supported (transcribed)
@@ -94,7 +119,7 @@
 
 ---
 
-# 7️⃣ AI Round Table Reasoning
+# 7?? AI Round Table Reasoning
 
 - [ ] Cardio/Metabolic domain active
 - [ ] Nutrition domain active
@@ -108,10 +133,10 @@
 
 ---
 
-# 8️⃣ Ongoing Coaching
+# 8?? Ongoing Coaching
 
 - [ ] User can ask free-form questions
-- [ ] “What next?” supported
+- [ ] What next? supported
 - [ ] Meal planning questions supported
 - [ ] Energy analysis supported
 - [ ] Supplement safety checks supported
@@ -120,9 +145,9 @@
 
 ---
 
-# 9️⃣ Guided Question Engine
+# 9?? Guided Question Engine
 
-- [ ] System generates “Next Best Question”
+- [ ] System generates Next Best Question
 - [ ] Contextual prompts provided
 - [ ] Follow-up experiment suggestions provided
 - [ ] Data clarification prompts triggered when needed
@@ -130,7 +155,7 @@
 
 ---
 
-# 🔟 Experiment Engine
+# Experiment Engine
 
 - [ ] Hypothesis structure defined
 - [ ] Intervention stored
@@ -142,7 +167,7 @@
 
 ---
 
-# 1️⃣1️⃣ Scoring System
+# 1??1?? Scoring System
 
 ## Domain Scores
 - [ ] Metabolic Health score
@@ -159,7 +184,7 @@
 
 ---
 
-# 1️⃣2️⃣ Override & Safety
+# 1??2?? Override & Safety
 
 - [ ] Users can override recommendations
 - [ ] Consequences explained
@@ -169,7 +194,7 @@
 
 ---
 
-# 1️⃣3️⃣ Knowledge Updating
+# 1??3?? Knowledge Updating
 
 - [ ] PubMed ingestion capability implemented (optional)
 - [ ] Research summarized in lay language
@@ -179,7 +204,7 @@
 
 ---
 
-# 1️⃣4️⃣ Dashboard
+# 1??4?? Dashboard
 
 - [ ] Daily view implemented
 - [ ] Weekly trend view implemented
@@ -193,7 +218,7 @@
 
 ---
 
-# 1️⃣5️⃣ Character & Tone
+# 1??5?? Character & Tone
 
 - [ ] Warm and supportive tone
 - [ ] Adaptive wit (only if user responds positively)
@@ -204,7 +229,7 @@
 
 ---
 
-# 1️⃣6️⃣ System Boundaries
+# 1??6?? System Boundaries
 
 - [ ] Does not claim medical diagnosis
 - [ ] Does not promise lifespan extension
@@ -213,7 +238,7 @@
 
 ---
 
-# ✅ Completion Criteria
+# ? Completion Criteria
 
 The Longevity Alchemist is considered functionally complete when:
 
@@ -225,4 +250,6 @@ The Longevity Alchemist is considered functionally complete when:
 - [ ] Domain and composite scores update over time
 - [ ] Experiments influence future recommendations
 - [ ] System operates fully within a single Docker container
+
+
 

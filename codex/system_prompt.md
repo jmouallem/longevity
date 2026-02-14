@@ -1,4 +1,4 @@
-﻿# System Prompt Index
+# System Prompt Index
 
 ## Purpose
 This file is an index to avoid duplicated prompt content and reduce drift.

@@ -1,4 +1,4 @@
-﻿# AGENTS.md
+# AGENTS.md
 
 ## Mission
 Build **The Longevity Alchemist** as a focused, deployable, AI-assisted longevity coaching system.

@@ -1,4 +1,4 @@
-﻿# 🧪 Testing Harness Pattern for AI-Heavy Builds
+# Testing Harness Pattern for AI-Heavy Builds
 ## The Longevity Alchemist
 
 This document defines a repeatable testing approach for AI-integrated systems where:
@@ -6,14 +6,14 @@ This document defines a repeatable testing approach for AI-integrated systems wh
 - External calls are expensive and flaky
 - Safety and correctness matter
 
-Goal: **Fast, deterministic tests** that validate the system’s *contracts* and *guardrails* without making real network calls.
+Goal: **Fast, deterministic tests** that validate the systems *contracts* and *guardrails* without making real network calls.
 
 ---
 
 # 1) Core Testing Strategy
 
 ## 1.1 Test the System Around the AI (Not the AI)
-We do NOT test whether the LLM is “smart”.
+We do NOT test whether the LLM is smart.
 We test that our software:
 - builds correct context,
 - enforces safety rules,
@@ -33,7 +33,7 @@ Tests enforce:
 ## 1.3 Use Three Test Layers
 1) **Unit tests** (pure functions)
 2) **Component tests** (LLM mocked)
-3) **Contract tests** (golden fixtures; optional “live” test in CI nightly)
+3) **Contract tests** (golden fixtures; optional live test in CI nightly)
 
 ---
 
@@ -56,7 +56,7 @@ So tests can simulate:
 
 ---
 
-# 3) The “LLM Stub Matrix” Pattern
+# 3) The LLM Stub Matrix Pattern
 
 Create a stub that can return deterministic outputs by scenario.
 
@@ -111,9 +111,9 @@ Keep seeds minimal and targeted.
 The context builder is the most important AI-facing module.
 
 ### Test Cases
-- baseline missing → context includes “missing baseline” marker
-- metrics missing → context reflects missing data
-- lots of metrics → context summarizes trends, not raw dump
+- baseline missing ? context includes missing baseline marker
+- metrics missing ? context reflects missing data
+- lots of metrics ? context summarizes trends, not raw dump
 - date range filtering correct
 - contains only allowed fields (no secrets)
 
@@ -128,10 +128,10 @@ Create a pure function:
 - `build_safety_response(flags) -> response_model`
 
 ### Test Cases
-- chest pain → triggers escalation response
-- stroke-like symptoms → triggers escalation
-- suicidal ideation (if supported) → escalation
-- supplement contraindication mention (basic rules) → adds caution flags
+- chest pain ? triggers escalation response
+- stroke-like symptoms ? triggers escalation
+- suicidal ideation (if supported) ? escalation
+- supplement contraindication mention (basic rules) ? adds caution flags
 
 These must be deterministic unit tests.
 
@@ -158,14 +158,14 @@ Use FastAPI TestClient.
 
 ### Example tests for `/coach/question`
 - unauthorized returns 401
-- baseline missing returns “please complete baseline”
+- baseline missing returns please complete baseline
 - LLM OK returns response with required fields
 - LLM malformed JSON returns fallback response (still valid shape)
 - safety flags override LLM (escalation path)
 
 ---
 
-# 10) “Golden Fixture” Pattern
+# 10) Golden Fixture Pattern
 
 For stable behavior validation:
 - Store expected LLM JSON outputs in fixtures:
@@ -174,7 +174,7 @@ For stable behavior validation:
 
 Tests load these and assert outputs.
 
-This prevents “prompt drift” from silently breaking your parsing.
+This prevents prompt drift from silently breaking your parsing.
 
 ---
 
@@ -212,7 +212,7 @@ Never block normal CI on these.
 
 # 13) What to Measure in Tests
 
-Assert these, not “quality”:
+Assert these, not quality:
 - Response schema shape always valid
 - Safety overrides work
 - Context includes correct facts
@@ -252,7 +252,7 @@ An AI-backed feature is complete when:
 - [ ] Safety rules covered by unit tests
 - [ ] JSON parsing + fallback covered by unit tests
 - [ ] API endpoint covered with mocked LLM component tests
-- [ ] No-network test suite runs under ~10–20 seconds locally
+- [ ] No-network test suite runs under ~1020 seconds locally
 - [ ] Optional live tests exist but are not required for normal CI
 
 ---
@@ -266,11 +266,11 @@ This harness ensures:
 - resilience to model variance
 - confidence that system logic is correct
 
-The LLM can change — your system should not break.
+The LLM can change  your system should not break.
 
 ************************************************************************************
 
-If Codex asks “how do I inject the fake?”, the clean pattern is:
+If Codex asks how do I inject the fake?, the clean pattern is:
 In app/services/llm.py:
 
 

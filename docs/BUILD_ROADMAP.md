@@ -1,9 +1,9 @@
-﻿# 🧪 The Longevity Alchemist  
+﻿# The Longevity Alchemist
 ## Build Priority Roadmap
 
 ---
 
-# 🎯 Guiding Principles
+# Guiding Principles
 
 - Ship usable value early
 - Build foundation before intelligence
@@ -14,7 +14,7 @@
 
 ---
 
-# 🟢 Phase 0 — Foundation (Infrastructure First)
+# Phase 0 - Foundation (Infrastructure First)
 
 ## Goal: Running, persistent, authenticated system
 
@@ -37,12 +37,15 @@
 - [ ] JWT or session auth
 - [ ] Login & signup endpoints
 - [ ] Protected routes middleware
+- [ ] Per-user AI provider/model/key configuration (BYOK)
+- [ ] Support OpenAI (ChatGPT) and Gemini provider selection
+- [ ] Encrypt user AI keys at rest and support key rotation
 
 ---
 
-# 🟢 Phase 1 — Core Usable MVP
+# Phase 1 - Core Usable MVP
 
-## Goal: Intake → Basic Coaching → Simple Dashboard
+## Goal: Intake ? Basic Coaching ? Simple Dashboard
 
 This phase makes the product real.
 
@@ -50,7 +53,12 @@ This phase makes the product real.
 - [ ] Baseline schema created
 - [ ] Intake endpoint
 - [ ] Save baseline to DB
-- [ ] Adaptive follow-up logic (basic)
+- [ ] Goal-first intake opening question
+- [ ] Goal-based adaptive depth logic
+- [ ] Risk-based clarifying prompts for high-risk values
+- [ ] Engagement-based tone/depth adaptation
+- [ ] Required-core + optional-module intake model
+- [ ] Motivational + data-transparency completion framing
 
 ### 1.2 Metrics System
 - [ ] Time-series metrics table
@@ -61,7 +69,7 @@ This phase makes the product real.
 ### 1.3 Basic Coaching Endpoint
 - [ ] `/coach/question` endpoint
 - [ ] Load user state
-- [ ] Call LLM once (single agent mode)
+- [ ] Call LLM once (single agent mode) using authenticated user's provider/model config
 - [ ] Return contextual response
 - [ ] Save conversation summary
 
@@ -77,12 +85,12 @@ This phase makes the product real.
 - [ ] Display composite score
 - [ ] Basic trend chart
 
-✅ **Milestone Outcome:**  
-User can sign up → complete intake → log metrics → ask “what next?” → see scores.
+**Milestone Outcome:**
+User can sign up ? complete intake ? log metrics ? ask -what next?- ? see scores.
 
 ---
 
-# 🟡 Phase 2 — Multi-Disciplinary Intelligence
+# Phase 2 - Multi-Disciplinary Intelligence
 
 ## Goal: Introduce Round Table Architecture
 
@@ -109,12 +117,12 @@ User can sign up → complete intake → log metrics → ask “what next?” �
 - [ ] Persona wrapper applied
 - [ ] Guided question suggestions appended
 
-✅ **Milestone Outcome:**  
+**Milestone Outcome:**
 The Longevity Alchemist now thinks in domains.
 
 ---
 
-# 🟡 Phase 3 — Experiment Engine
+# Phase 3 - Experiment Engine
 
 ## Goal: Adaptive learning
 
@@ -136,12 +144,12 @@ The Longevity Alchemist now thinks in domains.
 - [ ] Prompt experiment check-ins
 - [ ] Reflect outcomes in future suggestions
 
-✅ **Milestone Outcome:**  
+**Milestone Outcome:**
 System supports structured N-of-1 experimentation.
 
 ---
 
-# 🟡 Phase 4 — Guided Question Engine
+# Phase 4 - Guided Question Engine
 
 ## Goal: Proactive coaching
 
@@ -160,12 +168,12 @@ System supports structured N-of-1 experimentation.
 - [ ] Experiment follow-up reminders
 - [ ] Goal drift detection
 
-✅ **Milestone Outcome:**  
+**Milestone Outcome:**
 System proactively guides engagement.
 
 ---
 
-# 🟠 Phase 5 — Multi-Modal Input
+# Phase 5 - Multi-Modal Input
 
 ## Goal: Frictionless data capture
 
@@ -186,12 +194,25 @@ System proactively guides engagement.
 - [ ] Detect supplement queries
 - [ ] Detect meal questions
 
-✅ **Milestone Outcome:**  
+### 5.4 Conversational Intake (Future)
+- [ ] Add guided conversational intake mode
+- [ ] Support voice-first intake input (transcribe only)
+- [ ] Keep required structured core deterministic
+- [ ] Store structured outputs only (no full raw media retention)
+
+### 5.5 External Connector Sync (Future)
+- [ ] Add modular provider connector interface
+- [ ] Add Apple Health sync connector (normalized metrics)
+- [ ] Add Hume sync connector (normalized signals)
+- [ ] Add per-user sync settings + consent controls
+- [ ] Add incremental sync + idempotent upsert behavior
+
+**Milestone Outcome:**
 Users can log via text, voice, or photo.
 
 ---
 
-# 🟠 Phase 6 — Advanced Scoring & Visualization
+# Phase 6 - Advanced Scoring & Visualization
 
 ## Goal: Professional-grade dashboard
 
@@ -213,7 +234,7 @@ Users can log via text, voice, or photo.
 
 ---
 
-# 🔵 Phase 7 — Research & Knowledge Updating (Optional Advanced Layer)
+# Phase 7 - Research & Knowledge Updating (Optional Advanced Layer)
 
 ## Goal: Evidence adaptation
 
@@ -233,7 +254,7 @@ Users can log via text, voice, or photo.
 
 ---
 
-# 🔴 Phase 8 — Refinement & Optimization
+# Phase 8 - Refinement & Optimization
 
 ## Goal: Production readiness
 
@@ -248,24 +269,13 @@ Users can log via text, voice, or photo.
 
 ---
 
-# 🏁 Suggested Build Order Summary
+# Suggested Build Order Summary
 
-1️⃣ Foundation (Auth + SQLite + Deploy)  
-2️⃣ Intake + Metrics + Basic Coaching  
-3️⃣ Domain Scoring + Dashboard  
-4️⃣ Multi-Agent Round Table  
-5️⃣ Experiment Engine  
-6️⃣ Guided Question Engine  
-7️⃣ Multi-Modal Input  
-8️⃣ Advanced Scoring & Visualization  
-9️⃣ Research Ingestion  
-🔟 Production hardening  
+1. Foundation (Auth + SQLite + Deploy)`r`n2. Intake + Metrics + Basic Coaching`r`n3. Domain Scoring + Dashboard`r`n4. Multi-Agent Round Table`r`n5. Experiment Engine`r`n6. Guided Question Engine`r`n7. Multi-Modal Input`r`n8. Advanced Scoring & Visualization`r`n9. Research Ingestion`r`n10. Production hardening`r`n---
 
----
+# MVP Definition
 
-# 📌 MVP Definition
-
-Minimum viable “Longevity Alchemist”:
+Minimum viable -Longevity Alchemist-:
 
 - User authentication
 - Baseline intake
@@ -279,9 +289,14 @@ Everything beyond that increases intelligence, retention, and sophistication.
 
 ---
 
-# 🚀 Long-Term Vision
+# Long-Term Vision
 
 The Longevity Alchemist becomes:
 
 A structured, adaptive, evidence-informed longevity operating system that evolves with the user.
+
+
+
+
+
 

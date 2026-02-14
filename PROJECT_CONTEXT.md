@@ -1,16 +1,16 @@
-﻿# 🧪 The Longevity Alchemist — Project Context
+﻿# The Longevity Alchemist - Project Context
 
-## 1 — High-Level Overview
+## 1 - High-Level Overview
 
 **The Longevity Alchemist** is a web-based, AI-powered longevity and healthspan coaching system that helps users assess their current health, set personalized longevity goals, and receive adaptive, scientifically informed guidance.
 
-The system leverages structured data, multi-agent–inspired reasoning patterns, and external AI models to guide users toward long-term health improvements. It is deployed as a **single Docker container on Render**, with persistent state stored locally using **SQLite**. External AI calls and optional web search are used for coaching logic, while sensitive credentials are kept secure on the server.
+The system leverages structured data, multi-agent-inspired reasoning patterns, and external AI models to guide users toward long-term health improvements. It is deployed as a **single Docker container on Render**, with persistent state stored locally using **SQLite**. External AI calls and optional web search are used for coaching logic, while sensitive credentials are kept secure on the server.
 
-This document provides the background required to understand the project’s scope, architecture, and current state before beginning work.
+This document provides the background required to understand the project's scope, architecture, and current state before beginning work.
 
 ---
 
-## 2 — Purpose and Audience
+## 2 - Purpose and Audience
 
 This document is intended for:
 
@@ -23,12 +23,16 @@ Its purpose is to capture essential, relatively static project context to ensure
 
 ---
 
-## 3 — Project Scope
+## 3 - Project Scope
 
 ### In Scope
 
 - User onboarding and authentication
+- Per-user AI provider/model/key configuration (BYOK)
 - Structured baseline data collection and storage
+- Future: conversational/multimodal intake mode (while retaining structured storage)
+- Adaptive intake with goal/risk/engagement-based questioning and tone
+- Future: modular external data connectors (Apple Health, Hume) with normalized sync into internal datasets
 - Time-series health metrics logging
 - Domain scoring and composite score tracking
 - AI-assisted coaching via a `/coach/question` endpoint
@@ -48,24 +52,24 @@ Its purpose is to capture essential, relatively static project context to ensure
 
 ---
 
-## 4 — Key Artifacts (Document Map)
+## 4 - Key Artifacts (Document Map)
 
 The repository includes the following core documents:
 
-- **ARCHITECTURE.md** — High-level system architecture
-- **BLUEPRINT.md** — Build plan and component breakdown
-- **BUILD_ROADMAP.md** — Phased delivery roadmap
-- **USERNEEDS.md** — Functional user needs
-- **USERNEEDS_CHECKLIST.md** — User needs in checklist form
-- **codex/system_prompt.md** — Codex prompt index (points to per-slice prompts)
-- **SLICE prompts** — Per-slice implementation contracts
-- **TESTING_HARNESS.md** — AI testing patterns and strategy
-- **DRIFT_DETECTION_CHECKLIST.md** — Merge and drift guardrails
-- **TRACEABILITY.md** — User-needs-to-slice coverage mapping
+- **ARCHITECTURE.md** - High-level system architecture
+- **BLUEPRINT.md** - Build plan and component breakdown
+- **BUILD_ROADMAP.md** - Phased delivery roadmap
+- **USERNEEDS.md** - Functional user needs
+- **USERNEEDS_CHECKLIST.md** - User needs in checklist form
+- **codex/system_prompt.md** - Codex prompt index (points to per-slice prompts)
+- **SLICE prompts** - Per-slice implementation contracts
+- **TESTING_HARNESS.md** - AI testing patterns and strategy
+- **DRIFT_DETECTION_CHECKLIST.md** - Merge and drift guardrails
+- **TRACEABILITY.md** - User-needs-to-slice coverage mapping
 
 ---
 
-## 5 — Architecture Summary
+## 5 - Architecture Summary
 
 ### Runtime
 
@@ -77,13 +81,23 @@ The repository includes the following core documents:
 ### AI Integration
 
 - All LLM calls occur server-side
+- User can select provider/model and supply their own API key
+- Minimum provider support: OpenAI (ChatGPT) and Gemini
 - External LLM APIs permitted for coaching
 - Strict structured JSON responses with fallback logic required
+
+### External Data Integration (Planned)
+
+- Provider integrations must use modular adapter interfaces
+- Pull/sync flows must normalize incoming provider data to internal metric schemas
+- Per-user consent/auth is required for each connector
+- Connector failures must fail gracefully without taking down core endpoints
 
 ### Data Model
 
 - Structured tables:
   - users
+  - user_ai_configs
   - baselines
   - metrics
   - domain scores
@@ -94,7 +108,7 @@ The repository includes the following core documents:
 
 ---
 
-## 6 — Deployment Context
+## 6 - Deployment Context
 
 The project is deployed on **Render** with an attached **persistent disk** for SQLite storage.
 
@@ -107,7 +121,7 @@ The project is deployed on **Render** with an attached **persistent disk** for S
 
 ---
 
-## 7 — Repository Structure
+## 7 - Repository Structure
 
 Key directories and files:
 
@@ -140,7 +154,7 @@ Key directories and files:
 
 ---
 
-## 8 — Initial Setup
+## 8 - Initial Setup
 
 ### Local Development
 
@@ -159,7 +173,7 @@ uvicorn app.main:app --reload
 
 ---
 
-## 9 — Database Initialization
+## 9 - Database Initialization
 
 The system uses **SQLite** as a file-based database.
 
@@ -175,7 +189,7 @@ Initializing the schema early prevents failures during streaming and AI tests.
 
 ---
 
-## 10 — Testing Strategy
+## 10 - Testing Strategy
 
 All AI-dependent endpoints must support dependency injection for LLMs to enable:
 
@@ -188,7 +202,7 @@ See **TESTING_HARNESS.md** for the full pattern.
 
 ---
 
-## 11 — Standards and Conventions
+## 11 - Standards and Conventions
 
 - Use **Pydantic** for all request and response models.
 - All endpoints must return stable, versionable JSON schemas.
@@ -198,18 +212,18 @@ See **TESTING_HARNESS.md** for the full pattern.
 
 ---
 
-## 12 — Glossary
+## 12 - Glossary
 
-- **Baseline** — Initial user health data snapshot
-- **Metric** — Time-series user data (e.g., sleep, HR)
-- **Domain Score** — Category-specific score (sleep, metabolic, etc.)
-- **Composite Score** — Aggregated health score
-- **Coach Question** — User query handled by AI
-- **Slice** — Small, vertical unit of work
+- **Baseline** - Initial user health data snapshot
+- **Metric** - Time-series user data (e.g., sleep, HR)
+- **Domain Score** - Category-specific score (sleep, metabolic, etc.)
+- **Composite Score** - Aggregated health score
+- **Coach Question** - User query handled by AI
+- **Slice** - Small, vertical unit of work
 
 ---
 
-## 13 — Versioning
+## 13 - Versioning
 
 Include a `VERSION` file or a version header in the README using semantic versioning, for example:
 
@@ -221,7 +235,7 @@ This tracks incremental progress and supports controlled evolution.
 
 ---
 
-## 14 — Contributors and Contacts
+## 14 - Contributors and Contacts
 
 Maintain a short section listing:
 
@@ -233,7 +247,7 @@ This is optional but recommended for collaborative development.
 
 ---
 
-## 15 — Review and Update Protocol
+## 15 - Review and Update Protocol
 
 Update this document when:
 
@@ -241,6 +255,14 @@ Update this document when:
 - Major new slices are introduced
 - Deployment context changes
 - Persistent storage structure is modified
+
+
+
+
+
+
+
+
 
 
 

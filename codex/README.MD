@@ -1,4 +1,4 @@
-﻿# The Longevity Alchemist (Codex Workspace)
+# The Longevity Alchemist (Codex Workspace)
 
 The Longevity Alchemist is an AI-powered longevity coaching project built with a strict slice-based workflow.
 This `codex/` area defines how coding agents should execute work with minimal drift.
@@ -14,6 +14,8 @@ The Longevity Alchemist is a structured, adaptive longevity coaching system that
 It is designed to be evidence-informed, supportive, and practical, with strong privacy defaults:
 - authenticated multi-user accounts,
 - strict per-user data isolation,
+- per-user AI provider/model configuration (BYOK),
+- support for OpenAI (ChatGPT) and Gemini,
 - server-side AI integration,
 - SQLite-backed persistence,
 - and no long-term image/audio storage in early slices.
@@ -63,6 +65,7 @@ See `QUICKSTART.md` for the 60-second startup flow.
 - Keep LLM/API keys server-side only.
 - Preserve per-user data isolation.
 - Use SQLite on persistent storage path (`/var/data/longevity.db`) for deployed runtime.
+- Keep external integrations modular (provider adapters) so Apple Health/Hume sync can be added later without coupling core logic.
 
 ## Notes
 This `codex/README.MD` is intentionally concise. Detailed product, architecture, and roadmap context lives in `../docs/` and `../PROJECT_CONTEXT.md`.
