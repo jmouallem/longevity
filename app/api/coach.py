@@ -18,7 +18,7 @@ from app.core.safety import (
 )
 from app.db.models import ConversationSummary, User
 from app.db.session import get_db
-from app.services.llm import request_coaching_json
+from app.services.llm import LLMClient, get_llm_client
 
 router = APIRouter(prefix="/coach", tags=["coach"])
 
@@ -46,6 +46,10 @@ class CoachQuestionResponse(BaseModel):
     suggested_questions: list[str]
     safety_flags: list[str]
     disclaimer: str
+
+
+def request_coaching_json(db: Session, user_id: int, prompt: str, llm_client: LLMClient) -> dict[str, Any]:
+    return llm_client.generate_json(db=db, user_id=user_id, prompt=prompt)
 
 
 def _disclaimer() -> str:
@@ -163,6 +167,7 @@ def ask_coach_question(
     payload: CoachQuestionRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    llm_client: LLMClient = Depends(get_llm_client),
 ) -> CoachQuestionResponse:
     urgent_flags = detect_urgent_flags(payload.question)
     if urgent_flags:
@@ -200,7 +205,7 @@ def ask_coach_question(
     llm_error = False
     try:
         llm_prompt = _build_llm_prompt(payload, context)
-        raw = request_coaching_json(db=db, user_id=user.id, prompt=llm_prompt)
+        raw = request_coaching_json(db=db, user_id=user.id, prompt=llm_prompt, llm_client=llm_client)
         answer = str(raw.get("answer", "")).strip()
         if not answer:
             raise ValueError("missing answer")

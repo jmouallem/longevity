@@ -1,0 +1,1 @@
+{"answer": "This is not valid JSON", "rationale_bullets": ["x", "y",}

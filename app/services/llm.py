@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any
+from typing import Any, Protocol
 
 import httpx
 from sqlalchemy.orm import Session
@@ -11,7 +11,7 @@ from app.db.models import UserAIConfig
 LLM_TIMEOUT_SECONDS = 20.0
 
 
-def _safe_json_parse(raw_text: str) -> dict[str, Any]:
+def parse_llm_json(raw_text: str) -> dict[str, Any]:
     try:
         parsed = json.loads(raw_text)
         if isinstance(parsed, dict):
@@ -92,12 +92,22 @@ def _gemini_request(model: str, api_key: str, prompt: str) -> str:
     return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
-def request_coaching_json(db: Session, user_id: int, prompt: str) -> dict[str, Any]:
-    provider, model, api_key = _resolve_model_config(db, user_id)
-    if provider == "openai":
-        raw = _openai_request(model, api_key, prompt)
-    elif provider == "gemini":
-        raw = _gemini_request(model, api_key, prompt)
-    else:
-        raise ValueError("Unsupported AI provider")
-    return _safe_json_parse(raw)
+class LLMClient(Protocol):
+    def generate_json(self, db: Session, user_id: int, prompt: str) -> dict[str, Any]:
+        ...
+
+
+class RealLLMClient:
+    def generate_json(self, db: Session, user_id: int, prompt: str) -> dict[str, Any]:
+        provider, model, api_key = _resolve_model_config(db, user_id)
+        if provider == "openai":
+            raw = _openai_request(model, api_key, prompt)
+        elif provider == "gemini":
+            raw = _gemini_request(model, api_key, prompt)
+        else:
+            raise ValueError("Unsupported AI provider")
+        return parse_llm_json(raw)
+
+
+def get_llm_client() -> LLMClient:
+    return RealLLMClient()

@@ -10,13 +10,25 @@ from app.db.models import Base
 DB_PATH = os.getenv("DB_PATH", "/var/data/longevity.db")
 
 # Ensure parent directory exists when a nested path is configured.
-db_parent = Path(DB_PATH).expanduser().resolve().parent
-db_parent.mkdir(parents=True, exist_ok=True)
-DATABASE_URL = f"sqlite:///{DB_PATH}"
-
 connect_args = {"check_same_thread": False}
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+
+
+def _build_engine(db_path: str):
+    db_parent = Path(db_path).expanduser().resolve().parent
+    db_parent.mkdir(parents=True, exist_ok=True)
+    database_url = f"sqlite:///{db_path}"
+    return create_engine(database_url, connect_args=connect_args)
+
+
+engine = _build_engine(DB_PATH)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def configure_database(db_path: str) -> None:
+    global DB_PATH, engine, SessionLocal
+    DB_PATH = db_path
+    engine = _build_engine(DB_PATH)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def create_tables() -> None:

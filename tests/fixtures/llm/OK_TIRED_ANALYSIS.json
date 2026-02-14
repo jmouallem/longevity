@@ -1,0 +1,31 @@
+{
+  "answer": "Your fatigue pattern likely improves most from sleep regularity and stress downshifts.",
+  "rationale_bullets": [
+    "Sleep timing inconsistency can reduce next-day energy.",
+    "Stress load can blunt recovery and focus.",
+    "Small evening routines usually improve sleep quality quickly."
+  ],
+  "recommended_actions": [
+    {
+      "title": "7-day recovery reset",
+      "steps": [
+        "Anchor wake time within 30 minutes daily.",
+        "Add a 10-minute wind-down before bed.",
+        "Track morning energy score each day."
+      ]
+    },
+    {
+      "title": "Stress downshift",
+      "steps": [
+        "Take one 5-minute breathing break mid-afternoon.",
+        "End work with a short shutdown checklist."
+      ]
+    }
+  ],
+  "suggested_questions": [
+    "Want a 7-day sleep optimization plan?",
+    "Want a simple evening routine checklist?",
+    "Want help choosing one fatigue metric to track?"
+  ],
+  "safety_flags": []
+}
