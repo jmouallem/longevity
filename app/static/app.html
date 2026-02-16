@@ -232,6 +232,65 @@
       .btn-primary { background: var(--accent); color: #fff; }
       .btn-primary:hover { background: var(--accent2); }
       .btn-ghost { background: #f3f6fa; color: #24384f; border: 1px solid var(--border); }
+      .composer {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        border: 1px solid #ccdbea;
+        border-radius: 999px;
+        background: #ffffff;
+        box-shadow: 0 6px 14px rgba(10, 30, 48, .08);
+        padding: .35rem .4rem;
+        margin: .45rem 0 .65rem;
+      }
+      .composer-btn {
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #2a4b67;
+        font-size: 1.2rem;
+        line-height: 1;
+        padding: 0;
+      }
+      .composer-btn:hover { background: #eef5fb; border-color: #d4e3f0; }
+      .composer-btn.voice {
+        font-size: .72rem;
+        font-weight: 700;
+        border-color: #d8e6f3;
+        background: #f3f8fd;
+      }
+      .composer-btn.voice.listening {
+        background: #ffe8d7;
+        border-color: #ffd0ad;
+        color: #8d4c0d;
+      }
+      .composer-send {
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 999px;
+        background: #111111;
+        color: #ffffff;
+        font-size: .72rem;
+        font-weight: 700;
+        padding: 0;
+      }
+      .composer-send:hover { background: #000000; }
+      .composer-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: .98rem;
+        background: transparent;
+        min-width: 0;
+      }
+      .composer-input::placeholder { color: #7a8b9b; }
+      .composer-tools {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+      }
       .notice { min-height: 1.2rem; font-size: .86rem; margin-top: .25rem; color: var(--muted); }
       .notice.ok { color: var(--ok); }
       .notice.warn { color: var(--warn); }
@@ -340,7 +399,18 @@
         <article id="view-chat" class="view active">
           <h2 class="section-title">Default Chat</h2>
           <p class="muted">Ask a coaching question anytime. Mode controls response depth: Quick is faster, Deep is more thorough.</p>
-          <div class="field"><label for="chat-question">Question</label><textarea id="chat-question" placeholder="How can I improve energy this week?"></textarea></div>
+          <div class="field">
+            <label for="chat-question">Question</label>
+            <div class="composer">
+              <input id="chat-image-file" type="file" accept="image/*" style="display:none;" />
+              <button class="composer-btn" id="chat-image" type="button" aria-label="Attach image">+</button>
+              <input id="chat-question" class="composer-input" type="text" placeholder="Ask anything" autocomplete="off" />
+              <div class="composer-tools">
+                <button class="composer-btn voice" id="chat-voice" type="button" aria-label="Voice input">Mic</button>
+                <button class="composer-send" id="chat-send" type="button" aria-label="Send">Go</button>
+              </div>
+            </div>
+          </div>
           <div class="chat-toolbar">
             <div class="field">
               <label>Mode</label>
@@ -366,10 +436,7 @@
               </div>
             </div>
           </div>
-          <div class="row">
-            <button class="btn-primary" id="chat-send">Send</button>
-            <button class="btn-ghost" id="chat-clear">Clear</button>
-          </div>
+          <div class="row"><button class="btn-ghost" id="chat-clear">Clear</button></div>
           <div class="row" style="margin-top:.45rem;">
             <button class="btn-ghost" id="chat-daily-start">Start Daily Check-In With Coach</button>
           </div>
@@ -462,6 +529,9 @@
       const views = ["chat", "summary", "intake", "settings", "usage"];
       const intakeState = { sessionId: null, readyToComplete: false };
       const intakeChat = [];
+      let speechRecognition = null;
+      let voiceListening = false;
+      let selectedChatImage = null;
       const dailyCheckin = {
         active: false,
         index: 0,
@@ -1056,6 +1126,11 @@
 
       async function sendChat() {
         const question = el("chat-question").value.trim();
+        const hasImage = !!selectedChatImage;
+        if (hasImage) {
+          await sendImageChat(question);
+          return;
+        }
         if (!question) {
           setNotice("chat-notice", "Enter a question first.", "error");
           return;
@@ -1112,6 +1187,135 @@
         } else {
           setNotice("chat-notice", "Response ready (" + resolved.label + " mode).", "ok");
         }
+      }
+
+      async function sendImageChat(questionText) {
+        if (dailyCheckin.active) {
+          setNotice("chat-notice", "Finish current daily check-in before uploading an image.", "warn");
+          return;
+        }
+        if (!selectedChatImage) {
+          setNotice("chat-notice", "Select an image first.", "error");
+          return;
+        }
+        const resolved = resolveChatMode(questionText || "image analysis");
+        const form = new FormData();
+        form.append("image", selectedChatImage);
+        form.append("question", String(questionText || ""));
+        form.append("mode", resolved.mode);
+        form.append("deep_think", String(!!resolved.deepThink));
+        setNotice("chat-notice", "Analyzing image with coach...", "");
+        const res = await fetch("/coach/image", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + token },
+          body: form,
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("chat-notice", body.detail || "Image request failed.", "error");
+          return;
+        }
+        const body = await res.json();
+        selectedChatImage = null;
+        el("chat-image-file").value = "";
+        el("chat-question").value = "";
+        renderChatCoachResponse(body, resolved);
+      }
+
+      function renderChatCoachResponse(body, resolved) {
+        const out = el("chat-answer");
+        out.style.display = "block";
+        out.innerHTML = "<h3>Answer</h3>" + renderSimpleMarkdown(body.answer || "")
+          + "<strong>Coach Follow-up Questions (Please answer next)</strong><ul>" + (body.suggested_questions || []).map((q) => "<li>" + q + "</li>").join("") + "</ul>"
+          + "<p><em>Reply with your answers in your next message so guidance can be tailored and recorded.</em></p>";
+        const flags = Array.isArray(body.safety_flags) ? body.safety_flags : [];
+        const llmFailure = flags.some((f) => String(f).startsWith("llm_"));
+        if (llmFailure) {
+          if (flags.includes("llm_rate_limited")) {
+            setNotice("chat-notice", "AI provider rate limit/quota reached. Returned practical fallback guidance.", "warn");
+          } else if (flags.includes("llm_unavailable") || flags.includes("llm_provider_error")) {
+            setNotice("chat-notice", "AI service timed out or is temporarily unavailable. Returned practical fallback guidance.", "warn");
+          } else if (flags.includes("llm_auth_error") || flags.includes("llm_model_not_found")) {
+            setNotice("chat-notice", "AI configuration issue detected. Check Settings and model selection.", "error");
+          } else {
+            setNotice("chat-notice", "AI provider/model error. Check Settings (provider, key, and model selections).", "error");
+          }
+        } else {
+          setNotice("chat-notice", "Response ready (" + resolved.label + " mode).", "ok");
+        }
+      }
+
+      async function sendVoiceTranscript(transcript) {
+        const text = String(transcript || "").trim();
+        if (!text) {
+          setNotice("chat-notice", "No transcript captured. Try again.", "error");
+          return;
+        }
+        const resolved = resolveChatMode(text);
+        setNotice("chat-notice", "Sending voice transcript...", "");
+        const res = await fetch("/coach/voice", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            transcript: text,
+            mode: resolved.mode,
+            deep_think: resolved.deepThink
+          })
+        });
+        if (!res.ok) {
+          setNotice("chat-notice", "Voice request failed.", "error");
+          return;
+        }
+        const body = await res.json();
+        el("chat-question").value = "";
+        renderChatCoachResponse(body, resolved);
+      }
+
+      function startVoiceInput() {
+        if (dailyCheckin.active) {
+          setNotice("chat-notice", "Finish current daily check-in before using voice.", "warn");
+          return;
+        }
+        if (voiceListening) return;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          setNotice("chat-notice", "Voice input is not supported in this browser.", "warn");
+          return;
+        }
+        speechRecognition = new SpeechRecognition();
+        speechRecognition.lang = "en-US";
+        speechRecognition.interimResults = false;
+        speechRecognition.maxAlternatives = 1;
+        voiceListening = true;
+        el("chat-voice").classList.add("listening");
+        setNotice("chat-notice", "Listening... speak your question.", "");
+        speechRecognition.onresult = async (event) => {
+          const transcript = (((event || {}).results || [])[0] || [])[0]?.transcript || "";
+          el("chat-question").value = transcript;
+          await sendVoiceTranscript(transcript);
+        };
+        speechRecognition.onerror = () => {
+          setNotice("chat-notice", "Voice input failed. Try again.", "error");
+        };
+        speechRecognition.onend = () => {
+          voiceListening = false;
+          el("chat-voice").classList.remove("listening");
+        };
+        speechRecognition.start();
+      }
+
+      function openImagePicker() {
+        el("chat-image-file").click();
+      }
+
+      function onImageSelected(event) {
+        const file = (((event || {}).target || {}).files || [])[0] || null;
+        selectedChatImage = file;
+        if (!file) {
+          setNotice("chat-notice", "No image selected.", "warn");
+          return;
+        }
+        setNotice("chat-notice", "Image selected: " + file.name + ". Upload support will be enabled next.", "ok");
       }
 
       async function changePassword() {
@@ -1231,7 +1435,15 @@
       el("menu-usage").addEventListener("click", async () => { showView("usage"); await loadUsage(); });
       el("logout").addEventListener("click", () => { sessionStorage.removeItem("access_token"); window.location.href = "/onboarding"; });
       el("chat-send").addEventListener("click", sendChat);
-      el("chat-clear").addEventListener("click", () => { el("chat-question").value = ""; setNotice("chat-notice", "", ""); });
+      el("chat-voice").addEventListener("click", startVoiceInput);
+      el("chat-image").addEventListener("click", openImagePicker);
+      el("chat-image-file").addEventListener("change", onImageSelected);
+      el("chat-clear").addEventListener("click", () => {
+        el("chat-question").value = "";
+        selectedChatImage = null;
+        el("chat-image-file").value = "";
+        setNotice("chat-notice", "", "");
+      });
       el("chat-daily-start").addEventListener("click", async () => { await startDailyCheckin(); });
       el("chat-mode-button").addEventListener("click", (event) => {
         event.preventDefault();
@@ -1275,8 +1487,8 @@
           if (el("view-intake").classList.contains("active")) sendIntakeAnswer();
           return;
         }
-        if (event.shiftKey) return;
-        if (el("view-chat").classList.contains("active")) {
+        if (target && target.id === "chat-question") {
+          if (event.shiftKey) return;
           event.preventDefault();
           sendChat();
         }

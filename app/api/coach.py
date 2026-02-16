@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -27,6 +27,7 @@ from app.services.llm import LLMClient, LLMRequestError, get_llm_client
 router = APIRouter(prefix="/coach", tags=["coach"])
 logger = logging.getLogger("uvicorn.error")
 CACHE_TTL_SECONDS = int(os.getenv("COACH_CACHE_TTL_SECONDS", "75"))
+COACH_IMAGE_MAX_BYTES = int(os.getenv("COACH_IMAGE_MAX_BYTES", str(8 * 1024 * 1024)))
 _COACH_RESPONSE_CACHE: dict[tuple[int, str, str, bool], tuple[float, Any]] = {}
 
 
@@ -495,6 +496,40 @@ def _run_agentic_pipeline(
     return response, agent_outputs
 
 
+def _build_image_prompt(
+    *,
+    question: str,
+    context_hint: Optional[str],
+    context: dict[str, Any],
+    mode: str,
+) -> str:
+    body = {
+        "question": question,
+        "context_hint": context_hint,
+        "context": context,
+        "image_instruction": (
+            "Analyze the uploaded image as health context (for example meals, labels, workouts, biometrics screenshots). "
+            "If details are uncertain, state uncertainty and ask direct clarifying questions."
+        ),
+        "instructions": {
+            "tone": "warm, practical, science-informed, never shame-based",
+            "mode": mode,
+            "format": (
+                "answer must be readable markdown with short sections, bullets, and spacing for easy human scanning. "
+                "Avoid one long paragraph."
+            ),
+            "must_include": [
+                "answer",
+                "rationale_bullets (3-7)",
+                "recommended_actions (1-3 items with title + steps)",
+                "suggested_questions (3-8 direct coach questions for the user to answer next)",
+                "safety_flags",
+            ],
+        },
+    }
+    return json.dumps(body, separators=(",", ":"))
+
+
 def _tags_from_context(payload: CoachQuestionRequest, context: dict[str, Any]) -> str:
     tags = [payload.mode.value]
     if payload.deep_think:
@@ -677,3 +712,126 @@ def ask_coach_voice(
         context_hint=payload.context_hint,
     )
     return ask_coach_question(payload=text_payload, user=user, db=db, llm_client=llm_client)
+
+
+@router.post("/image", response_model=CoachQuestionResponse, status_code=status.HTTP_200_OK)
+def ask_coach_image(
+    image: UploadFile = File(...),
+    question: str = Form(""),
+    mode: CoachMode = Form(CoachMode.quick),
+    deep_think: bool = Form(False),
+    context_hint: Optional[str] = Form(default=None),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    llm_client: LLMClient = Depends(get_llm_client),
+) -> CoachQuestionResponse:
+    if not image.content_type or not image.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image uploads are supported.")
+    image_bytes = image.file.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty.")
+    if len(image_bytes) > COACH_IMAGE_MAX_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Image too large. Max size is {COACH_IMAGE_MAX_BYTES // (1024 * 1024)}MB.",
+        )
+
+    prompt_text = (question or "").strip() or "Please analyze this image and provide personalized coaching guidance."
+    payload = CoachQuestionRequest(
+        question=prompt_text,
+        mode=mode,
+        deep_think=deep_think,
+        context_hint=context_hint,
+    )
+
+    urgent_flags = detect_urgent_flags(payload.question)
+    if urgent_flags:
+        emergency = emergency_response()
+        response = CoachQuestionResponse(**emergency)
+        _persist_summary(
+            db=db,
+            user_id=user.id,
+            question=f"[image] {payload.question}",
+            answer=response.answer,
+            tags="safety,urgent,image",
+            safety_flags=response.safety_flags,
+        )
+        return response
+
+    context = build_coaching_context(db=db, user_id=user.id)
+    if not context.get("baseline_present"):
+        response = _fallback_response(
+            answer=(
+                "I can give more precise guidance once your baseline is complete. "
+                "Please complete baseline intake first, then upload this again for personalized coaching."
+            ),
+            safety_flags=["baseline_missing"],
+        )
+        _persist_summary(
+            db=db,
+            user_id=user.id,
+            question=f"[image] {payload.question}",
+            answer=response.answer,
+            tags="image,baseline_missing",
+            safety_flags=response.safety_flags,
+        )
+        return response
+
+    llm_error = False
+    try:
+        task_type = "deep_think" if (payload.mode == CoachMode.deep or payload.deep_think) else "reasoning"
+        raw = llm_client.generate_json_from_image(
+            db=db,
+            user_id=user.id,
+            prompt=_build_image_prompt(
+                question=payload.question,
+                context_hint=payload.context_hint,
+                context=context,
+                mode=payload.mode.value,
+            ),
+            image_bytes=image_bytes,
+            image_mime_type=image.content_type,
+            task_type=task_type,
+        )
+        response = _response_from_raw(raw, payload.mode.value)
+    except LLMRequestError as exc:
+        logger.exception("coach_llm_image_request_error user_id=%s detail=%s", user.id, str(exc))
+        llm_error = True
+        detail_flag = "llm_unavailable"
+        if exc.status_code == 401:
+            detail_flag = "llm_auth_error"
+        elif exc.status_code == 404:
+            detail_flag = "llm_model_not_found"
+        elif exc.status_code == 429:
+            detail_flag = "llm_rate_limited"
+        elif exc.status_code and exc.status_code >= 500:
+            detail_flag = "llm_provider_error"
+        response = _practical_non_llm_response(payload=payload, context=context, flag=detail_flag)
+    except Exception as exc:
+        logger.exception("coach_image_unhandled_error user_id=%s detail=%s", user.id, str(exc))
+        llm_error = True
+        response = _fallback_response(
+            answer=(
+                "I could not process the image right now. Please retry in a moment, "
+                "or ask your question in text and I can still help."
+            ),
+            safety_flags=["llm_unavailable"],
+        )
+
+    if has_supplement_topic(payload.question):
+        response.safety_flags = list({*response.safety_flags, "supplement_caution"})
+        response.rationale_bullets = response.rationale_bullets[:6] + [supplement_caution_text()]
+
+    response = _apply_daily_log_nudge(response, context, payload.question)
+    if llm_error:
+        response.suggested_questions = response.suggested_questions[:8]
+
+    _persist_summary(
+        db=db,
+        user_id=user.id,
+        question=f"[image:{image.filename or 'upload'}] {payload.question}",
+        answer=response.answer,
+        tags="image," + _tags_from_context(payload, context),
+        safety_flags=response.safety_flags,
+    )
+    return response

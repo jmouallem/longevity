@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import base64
 from datetime import datetime, timezone
 from typing import Any, Optional, Protocol, Tuple
 
@@ -199,6 +200,22 @@ def _openai_request_v1_responses(
     )
     response.raise_for_status()
     data = response.json()
+    text_out = _extract_openai_output_text(data)
+    if not text_out:
+        raise ValueError("OpenAI responses API returned no text output")
+    usage = data.get("usage", {}) if isinstance(data, dict) else {}
+    in_tokens = int(usage.get("input_tokens", usage.get("prompt_tokens", 0)) or 0)
+    out_tokens = int(usage.get("output_tokens", usage.get("completion_tokens", 0)) or 0)
+    total_tokens = int(usage.get("total_tokens", in_tokens + out_tokens) or 0)
+    usage_tokens = {
+        "prompt_tokens": in_tokens,
+        "completion_tokens": out_tokens,
+        "total_tokens": total_tokens,
+    }
+    return text_out, usage_tokens
+
+
+def _extract_openai_output_text(data: dict[str, Any]) -> str:
     text_out = ""
     if isinstance(data.get("output_text"), str) and data.get("output_text"):
         text_out = data["output_text"]
@@ -212,8 +229,6 @@ def _openai_request_v1_responses(
             if text_out:
                 break
     if not text_out:
-        # Some GPT-5 responses can end as "incomplete" with reasoning summaries only.
-        # Recover summary text so callers still get useful content instead of a hard failure.
         for item in data.get("output", []):
             if item.get("type") != "reasoning":
                 continue
@@ -224,8 +239,52 @@ def _openai_request_v1_responses(
                     break
             if text_out:
                 break
+    return text_out
+
+
+def _openai_request_v1_responses_with_image(
+    model: str, api_key: str, prompt: str, image_bytes: bytes, image_mime_type: str, max_output_tokens: int
+) -> Tuple[str, dict[str, int]]:
+    image_b64 = base64.b64encode(image_bytes).decode("ascii")
+    payload = {
+        "model": model,
+        "input": [
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "Return strict JSON with keys: answer, rationale_bullets, recommended_actions, "
+                            "suggested_questions, safety_flags."
+                        ),
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": prompt},
+                    {"type": "input_image", "image_url": f"data:{image_mime_type};base64,{image_b64}"},
+                ],
+            },
+        ],
+        "max_output_tokens": max_output_tokens,
+    }
+    if model.startswith("gpt-5"):
+        payload["reasoning"] = {"effort": "low"}
+        payload["text"] = {"verbosity": "low"}
+    response = httpx.post(
+        "https://api.openai.com/v1/responses",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json=payload,
+        timeout=_http_timeout(),
+    )
+    response.raise_for_status()
+    data = response.json()
+    text_out = _extract_openai_output_text(data)
     if not text_out:
-        raise ValueError("OpenAI responses API returned no text output")
+        raise ValueError("OpenAI responses API returned no text output for image request")
     usage = data.get("usage", {}) if isinstance(data, dict) else {}
     in_tokens = int(usage.get("input_tokens", usage.get("prompt_tokens", 0)) or 0)
     out_tokens = int(usage.get("output_tokens", usage.get("completion_tokens", 0)) or 0)
@@ -353,6 +412,63 @@ def _gemini_request(
     return data["candidates"][0]["content"]["parts"][0]["text"], usage_tokens
 
 
+def _gemini_request_with_image(
+    model: str, api_key: str, prompt: str, image_bytes: bytes, image_mime_type: str, max_output_tokens: int
+) -> Tuple[str, dict[str, int]]:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    image_b64 = base64.b64encode(image_bytes).decode("ascii")
+    response = httpx.post(
+        url,
+        headers={"Content-Type": "application/json"},
+        json={
+            "generationConfig": {"responseMimeType": "application/json", "temperature": 0.3, "maxOutputTokens": max_output_tokens},
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {"inlineData": {"mimeType": image_mime_type, "data": image_b64}},
+                ]
+            }],
+        },
+        timeout=_http_timeout(),
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        status = exc.response.status_code if exc.response else None
+        detail = ""
+        if exc.response is not None:
+            detail = (exc.response.text or "").strip()[:220]
+        raise LLMRequestError(
+            provider="gemini",
+            model=model,
+            status_code=status,
+            message=f"Gemini image request failed (status={status}): {detail or 'no response body'}",
+        ) from exc
+    data = response.json()
+    usage = data.get("usageMetadata", {}) if isinstance(data, dict) else {}
+    prompt_tokens = int(usage.get("promptTokenCount", 0) or 0)
+    completion_tokens = int(usage.get("candidatesTokenCount", 0) or 0)
+    total_tokens = int(usage.get("totalTokenCount", prompt_tokens + completion_tokens) or 0)
+    usage_tokens = {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+    }
+    candidates = data.get("candidates", [])
+    if not candidates:
+        raise ValueError("Gemini image request returned no candidates")
+    parts = ((candidates[0] or {}).get("content") or {}).get("parts") or []
+    text_out = ""
+    for part in parts:
+        candidate = str((part or {}).get("text") or "").strip()
+        if candidate:
+            text_out = candidate
+            break
+    if not text_out:
+        raise ValueError("Gemini image request returned no text output")
+    return text_out, usage_tokens
+
+
 def _record_usage(
     db: Session, user_id: int, provider: str, model: str, usage_tokens: dict[str, int]
 ) -> None:
@@ -394,6 +510,17 @@ class LLMClient(Protocol):
     ) -> dict[str, Any]:
         ...
 
+    def generate_json_from_image(
+        self,
+        db: Session,
+        user_id: int,
+        prompt: str,
+        image_bytes: bytes,
+        image_mime_type: str,
+        task_type: str = "reasoning",
+    ) -> dict[str, Any]:
+        ...
+
 
 class RealLLMClient:
     def generate_json(
@@ -416,6 +543,44 @@ class RealLLMClient:
             return parse_llm_json(raw)
         except ValueError:
             # Recover from non-JSON model output instead of failing the entire request path.
+            text = str(raw).strip()
+            return {
+                "answer": text or "Model returned an empty response.",
+                "rationale_bullets": [],
+                "recommended_actions": [],
+                "suggested_questions": [],
+                "safety_flags": [],
+            }
+
+    def generate_json_from_image(
+        self,
+        db: Session,
+        user_id: int,
+        prompt: str,
+        image_bytes: bytes,
+        image_mime_type: str,
+        task_type: str = "reasoning",
+    ) -> dict[str, Any]:
+        provider, reasoning_model, deep_thinker_model, utility_model, api_key = _resolve_model_config(
+            db, user_id
+        )
+        model = select_model_for_task(reasoning_model, deep_thinker_model, utility_model, task_type)
+        max_output_tokens = _max_output_tokens(task_type)
+        if provider == "openai":
+            raw, usage_tokens = _openai_request_v1_responses_with_image(
+                model, api_key, prompt, image_bytes, image_mime_type, max_output_tokens
+            )
+        elif provider == "gemini":
+            raw, usage_tokens = _gemini_request_with_image(
+                model, api_key, prompt, image_bytes, image_mime_type, max_output_tokens
+            )
+        else:
+            raise ValueError("Unsupported AI provider")
+        _record_usage(db, user_id, provider, model, usage_tokens)
+        db.commit()
+        try:
+            return parse_llm_json(raw)
+        except ValueError:
             text = str(raw).strip()
             return {
                 "answer": text or "Model returned an empty response.",
