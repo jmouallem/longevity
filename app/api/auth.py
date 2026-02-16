@@ -18,7 +18,18 @@ from app.core.security import (
     mask_api_key,
     verify_password,
 )
-from app.db.models import ModelUsageStat, User, UserAIConfig
+from app.db.models import (
+    Baseline,
+    CompositeScore,
+    ConversationSummary,
+    DailyLog,
+    DomainScore,
+    IntakeConversationSession,
+    Metric,
+    ModelUsageStat,
+    User,
+    UserAIConfig,
+)
 from app.db.session import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -96,6 +107,10 @@ class ModelUsageEntry(BaseModel):
 
 class ModelUsageResponse(BaseModel):
     items: list[ModelUsageEntry]
+
+
+class ResetResult(BaseModel):
+    deleted_rows: int
 
 
 def _estimate_usage_cost_usd(provider: str, model: str, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
@@ -503,3 +518,42 @@ def model_usage(
             for row in rows
         ]
     )
+
+
+@router.delete("/model-usage", response_model=ResetResult)
+def reset_model_usage(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ResetResult:
+    deleted_rows = (
+        db.query(ModelUsageStat)
+        .filter(ModelUsageStat.user_id == user.id)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return ResetResult(deleted_rows=int(deleted_rows or 0))
+
+
+@router.delete("/data", response_model=ResetResult)
+def reset_user_data(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ResetResult:
+    deleted_rows = 0
+    for model in (
+        IntakeConversationSession,
+        ConversationSummary,
+        DailyLog,
+        Metric,
+        DomainScore,
+        CompositeScore,
+        Baseline,
+    ):
+        count = (
+            db.query(model)
+            .filter(model.user_id == user.id)
+            .delete(synchronize_session=False)
+        )
+        deleted_rows += int(count or 0)
+    db.commit()
+    return ResetResult(deleted_rows=deleted_rows)

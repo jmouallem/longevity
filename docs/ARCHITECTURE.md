@@ -83,9 +83,11 @@ Single Docker Container (Render Web Service)
 Responsibilities:
 - Onboarding UI
 - Main workspace UI with menu views (chat, intake, settings, usage)
+- Exactly one workspace view is visible at a time (active view contract)
 - Intake completion status indicator
 - Guided question prompts
-- Settings flows (AI config, password change)
+- Settings flows (AI config, password change, user-data reinitialize, model-usage reset)
+- Shared feedback capture flow (feature/idea/bug), CSV export, and clear-all action
 - Chat progress feedback during multi-step reasoning (context, specialists, synthesis)
 - Rendered answer formatting optimized for readable markdown-like output
 - Coach follow-up questions presented as questions for the user to answer next
@@ -105,10 +107,13 @@ Responsibilities:
 - AI orchestration
 - Intake status + baseline upsert endpoints
 - Settings endpoints (AI config, password change)
+- Settings reset endpoints (user-data reinitialize, model-usage reset)
+- Feedback endpoints (submit, export CSV, clear shared entries)
 - Model usage stats endpoint
 - Intake coach orchestration endpoints
 - Daily log endpoints (upsert + list)
 - Overall summary endpoint (today/7d/30d deterministic aggregation)
+- Image coaching endpoint (`/coach/image`) with no persistent media storage
 - Score calculation
 - Experiment lifecycle logic
 - LLM resilience logic (timeouts/retries/fallback path)
@@ -213,10 +218,10 @@ Core tables:
 
 ---
 
-### 5.2 Meal Photo
+### 5.2 Image Coaching Input
 
 1. Photo uploaded
-2. Sent to vision model
+2. Sent to provider multimodal endpoint
 3. Structured nutrition estimate returned
 4. Store only:
    - foods

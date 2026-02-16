@@ -84,7 +84,12 @@ PUT  /auth/ai-config
 GET  /auth/ai-config
 PUT  /auth/change-password
 GET  /auth/model-usage
+DELETE /auth/model-usage
+DELETE /auth/data
 POST /auth/model-options
+POST /feedback/entries
+GET  /feedback/entries/export
+DELETE /feedback/entries
 
 POST /intake/baseline
 GET  /intake/status
@@ -100,7 +105,7 @@ POST /integrations/apple-health/sync
 POST /integrations/hume/sync
 
 POST /coach/question
-POST /coach/meal-photo
+POST /coach/image
 POST /coach/voice
 
 GET  /experiments
@@ -108,8 +113,10 @@ POST /experiments
 
 Internal behavior notes:
 - `/coach/question` must return stable structured JSON even on provider failures.
+- `/coach/image` must validate image type/size and return the same structured response contract.
 - Chat responses should preserve readable markdown formatting in `answer`.
 - Follow-up items should be direct coach questions for user reply.
+- Feedback entries are shared across users in one table, exportable to CSV, and clearable from app settings/workspace.
 
 ---
 
@@ -218,7 +225,7 @@ Phase 1:
 - Main workspace route with menu views (chat/intake/settings/usage)
 - Intake can be skipped at setup and completed/re-run later from workspace menu
 - Post-intake success routes user back to default chat
-- Settings menu includes AI config updates and password change
+- Settings menu includes AI config updates, password change, user-data reinitialize, and model-usage reset (separate actions)
 - Per-model token usage stats are persisted and exposed
 - AI-led intake coach agent asks one question at a time and adapts depth by concern
 - Conversational intake maps deterministically into baseline schema

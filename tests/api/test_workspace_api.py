@@ -1,4 +1,15 @@
+from datetime import date, datetime, timezone
 from uuid import uuid4
+
+from app.db.models import (
+    Baseline,
+    CompositeScore,
+    ConversationSummary,
+    DailyLog,
+    DomainScore,
+    Metric,
+    ModelUsageStat,
+)
 
 
 def _baseline_payload() -> dict:
@@ -165,3 +176,126 @@ def test_intake_conversation_accepts_mixed_units(client, auth_token) -> None:
     # Converted and normalized values:
     assert body["activity_level"] == "light"
     assert body["sleep_hours"] >= 7.4
+
+
+def test_reset_model_usage_only(client, auth_token, db_session) -> None:
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    session = client.get("/auth/session", headers=headers)
+    assert session.status_code == 200
+    user_id = session.json()["user_id"]
+
+    row = ModelUsageStat(
+        user_id=user_id,
+        provider="openai",
+        model="gpt-5-mini",
+        request_count=3,
+        prompt_tokens=300,
+        completion_tokens=120,
+        total_tokens=420,
+        last_used_at=datetime.now(timezone.utc),
+    )
+    db_session.add(row)
+    db_session.commit()
+
+    reset = client.delete("/auth/model-usage", headers=headers)
+    assert reset.status_code == 200
+    assert reset.json()["deleted_rows"] >= 1
+
+    usage = client.get("/auth/model-usage", headers=headers)
+    assert usage.status_code == 200
+    assert usage.json()["items"] == []
+
+
+def test_reset_user_data_keeps_model_usage(client, auth_token, db_session) -> None:
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    session = client.get("/auth/session", headers=headers)
+    assert session.status_code == 200
+    user_id = session.json()["user_id"]
+
+    db_session.add(
+        Baseline(
+            user_id=user_id,
+            primary_goal="energy",
+            weight=80.0,
+            waist=92.0,
+            systolic_bp=122,
+            diastolic_bp=79,
+            resting_hr=61,
+            sleep_hours=7.2,
+            activity_level="moderate",
+            energy=7,
+            mood=7,
+            stress=4,
+            sleep_quality=7,
+            motivation=8,
+        )
+    )
+    db_session.add(
+        Metric(
+            user_id=user_id,
+            metric_type="weight_kg",
+            value_num=80.2,
+            taken_at=datetime.now(timezone.utc),
+        )
+    )
+    db_session.add(
+        DomainScore(
+            user_id=user_id,
+            sleep_score=75,
+            metabolic_score=74,
+            recovery_score=73,
+            behavioral_score=72,
+            fitness_score=71,
+            computed_at=datetime.now(timezone.utc),
+        )
+    )
+    db_session.add(CompositeScore(user_id=user_id, longevity_score=74, computed_at=datetime.now(timezone.utc)))
+    db_session.add(
+        ConversationSummary(
+            user_id=user_id,
+            created_at=datetime.now(timezone.utc),
+            question="q",
+            answer_summary="a",
+            tags="t",
+            safety_flags=None,
+            agent_trace_json=None,
+        )
+    )
+    db_session.add(
+        DailyLog(
+            user_id=user_id,
+            log_date=date.today(),
+            sleep_hours=7.0,
+            energy=7,
+            mood=7,
+            stress=4,
+            training_done=True,
+            nutrition_on_plan=True,
+            notes="note",
+        )
+    )
+    db_session.add(
+        ModelUsageStat(
+            user_id=user_id,
+            provider="openai",
+            model="gpt-5-mini",
+            request_count=1,
+            prompt_tokens=10,
+            completion_tokens=5,
+            total_tokens=15,
+            last_used_at=datetime.now(timezone.utc),
+        )
+    )
+    db_session.commit()
+
+    reset = client.delete("/auth/data", headers=headers)
+    assert reset.status_code == 200
+    assert reset.json()["deleted_rows"] >= 6
+
+    intake = client.get("/intake/status", headers=headers)
+    assert intake.status_code == 200
+    assert intake.json()["baseline_completed"] is False
+
+    usage = client.get("/auth/model-usage", headers=headers)
+    assert usage.status_code == 200
+    assert len(usage.json()["items"]) == 1

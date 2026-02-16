@@ -210,3 +210,20 @@ class DailyLog(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user: Mapped[User] = relationship("User", back_populates="daily_logs")
+
+
+class FeedbackEntry(Base):
+    __tablename__ = "feedback_entries"
+    __table_args__ = (
+        Index("ix_feedback_created", "created_at"),
+        Index("ix_feedback_category_created", "category", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    user_email: Mapped[str] = mapped_column(String(255), nullable=False)
+    category: Mapped[str] = mapped_column(String(24), nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    details: Mapped[str] = mapped_column(Text, nullable=False)
+    page: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)

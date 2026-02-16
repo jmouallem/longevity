@@ -33,6 +33,8 @@ Its purpose is to capture essential, relatively static project context to ensure
 - Per-user triple model profiles (deep thinker + reasoning + utility) with deterministic routing
 - Structured baseline data collection and storage
 - Main workspace UI with menu-based Chat/Intake/Settings/Usage views
+- Shared feedback capture view (feature/idea/bug) with CSV export + clear-all actions
+- Settings actions to reinitialize user health/coaching data and reset model usage stats separately
 - Skippable and re-runnable intake lifecycle from workspace menu
 - AI-led conversational intake coach agent for one-question-at-a-time baseline capture
 - Future: conversational/multimodal intake mode (while retaining structured storage)
@@ -65,6 +67,7 @@ The repository includes the following core documents:
 - **ARCHITECTURE.md** - High-level system architecture
 - **BLUEPRINT.md** - Build plan and component breakdown
 - **BUILD_ROADMAP.md** - Phased delivery roadmap
+- **DEPLOYMENT.md** - Docker, Portainer, and Render deployment instructions
 - **USERNEEDS.md** - Functional user needs
 - **USERNEEDS_CHECKLIST.md** - User needs in checklist form
 - **codex/system_prompt.md** - Codex prompt index (points to per-slice prompts)

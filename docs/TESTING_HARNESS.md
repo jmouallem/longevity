@@ -169,6 +169,12 @@ Use FastAPI TestClient.
 - task router selects utility model for summarization/routing/extraction tasks
 - auto mode resolves to quick mode for cost guardrails
 - duplicate identical questions within cache TTL return stable cached response shape
+- `/coach/image` enforces image type/size validation and returns stable response shape
+- `/auth/model-usage` reset clears usage rows only for the authenticated user
+- `/auth/data` reset clears user health/coaching rows while preserving account and AI config
+- `/feedback/entries` supports authenticated shared capture writes
+- `/feedback/entries/export` returns CSV contract with expected headers
+- `/feedback/entries` clear action empties shared feedback table deterministically
 
 ---
 
@@ -231,6 +237,7 @@ Assert these, not quality:
 - Reasoning task class uses reasoning model profile by default
 - Intake status endpoint correctly reflects baseline completion
 - Workspace settings endpoints (password change) enforce auth and validation
+- Workspace settings reset endpoints enforce auth and per-user isolation
 - Intake coach asks one question at a time and advances deterministically
 - Risk/concern flags trigger deeper follow-up questions in intake flow
 - Coach follow-up questions are framed as user-response prompts

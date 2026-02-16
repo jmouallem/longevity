@@ -294,6 +294,12 @@ Main workspace requirements:
 Settings requirements:
 - User can update AI configuration from settings menu
 - User can change password from settings menu
+- User can reinitialize health/coaching data from settings menu
+- User can reset model usage stats independently from settings menu
+- User can quickly capture feature ideas and bugs from the app UI
+- Feedback entries are stored in one shared table across users
+- User can export all feedback entries as a downloadable CSV
+- User can clear all feedback entries from the shared table
 
 Token usage requirements:
 - Track tokens per user/provider/model

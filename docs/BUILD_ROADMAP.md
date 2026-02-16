@@ -93,6 +93,8 @@ This phase makes the product real.
 - [ ] Chat, Intake, Settings, and Usage views are available
 - [ ] Settings menu supports AI config updates
 - [ ] Settings menu supports password change
+- [ ] Settings menu supports user-data reinitialize
+- [ ] Settings menu supports model-usage reset
 - [ ] Track per-user/per-model token usage stats
 - [ ] Expose token usage endpoint for workspace usage view
 
@@ -218,7 +220,7 @@ System proactively guides engagement.
 ## Goal: Frictionless data capture
 
 ### 5.1 Meal Photo Support
-- [ ] Image upload endpoint
+- [ ] Image coaching upload endpoint (`/coach/image`)
 - [ ] Vision model integration
 - [ ] Structured macro extraction
 - [ ] Confidence rating

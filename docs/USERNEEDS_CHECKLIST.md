@@ -110,6 +110,12 @@
 - [ ] Workspace includes chat, intake, settings, and usage views
 - [ ] Settings include AI config updates
 - [ ] Settings include password change
+- [ ] Settings include user-data reinitialize
+- [ ] Settings include model-usage reset independent of data reinitialize
+- [ ] App includes quick feedback capture (feature/idea/bug)
+- [ ] Feedback store is shared across users (single table)
+- [ ] Feedback can be exported as downloadable CSV
+- [ ] Feedback store can be cleared from UI action
 - [ ] Chat shows processing progress feedback during reasoning pipeline
 - [ ] Chat answer rendering is readable markdown-style (sections/bullets/spacing)
 - [ ] Follow-up prompts are framed as coach questions for the user to answer next

@@ -6,41 +6,60 @@
     <title>Longevity Alchemist Workspace</title>
     <style>
       :root {
-        --bg: #eef2f7;
-        --panel: #ffffff;
-        --ink: #1b2533;
-        --muted: #5f7082;
-        --accent: #0a78b8;
-        --accent2: #065f92;
+        --bg: #e8edf4;
+        --panel: #fdfefe;
+        --ink: #162235;
+        --muted: #53657a;
+        --accent: #0e7cc7;
+        --accent2: #095d96;
         --ok: #1f845a;
         --warn: #ad5f00;
         --error: #c9372c;
-        --border: #d9e4ee;
+        --border: #d2deea;
+        --surface-1: #f6f9fc;
+        --surface-2: #edf3f9;
       }
       * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
       body {
         margin: 0;
-        font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+        font-family: "Trebuchet MS", "Segoe UI", "Helvetica Neue", sans-serif;
         color: var(--ink);
-        background: radial-gradient(circle at 10% 10%, #f9fbff, var(--bg) 35%);
+        background:
+          radial-gradient(circle at 0% 0%, #f8fbff 0, transparent 30%),
+          radial-gradient(circle at 100% 0%, #f1f7fe 0, transparent 30%),
+          linear-gradient(180deg, #edf2f8 0%, var(--bg) 100%);
       }
-      .shell { max-width: 960px; margin: 0 auto; padding: 1rem; }
+      .shell {
+        max-width: 1060px;
+        margin: 0 auto;
+        padding: 1.1rem 1rem 1.25rem;
+      }
       .topbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 1rem;
-        margin-bottom: .8rem;
+        margin-bottom: .95rem;
+        padding: .5rem .6rem;
+        border: 1px solid rgba(207, 221, 234, .8);
+        border-radius: 16px;
+        background: rgba(250, 253, 255, .76);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 12px 24px rgba(17, 37, 58, .06);
       }
-      .title { margin: 0; font-size: clamp(1.1rem, 2vw, 1.8rem); }
+      .title { margin: 0; font-size: clamp(1.2rem, 2vw, 2rem); letter-spacing: .01em; }
       .muted { margin: .2rem 0 0; color: var(--muted); font-size: .9rem; }
       button {
         border: none;
-        border-radius: 9px;
+        border-radius: 11px;
         padding: .6rem .75rem;
         font-weight: 600;
         cursor: pointer;
+        transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+        min-height: 44px;
       }
+      button:active { transform: translateY(1px); }
       .top-actions { display: flex; gap: .5rem; align-items: center; }
       .hamburger {
         position: relative;
@@ -132,28 +151,36 @@
         color: #1f4b67;
         border-radius: 10px;
         padding: .6rem .7rem;
+        min-height: 44px;
       }
       .nav-item.active {
         background: #d4e9f8;
         border-color: #9dc8e4;
       }
       .card {
-        background: var(--panel);
+        background: linear-gradient(180deg, var(--panel) 0%, #f9fcff 100%);
         border: 1px solid var(--border);
-        border-radius: 14px;
-        box-shadow: 0 6px 18px rgba(15, 42, 66, .08);
-        padding: .95rem;
+        border-radius: 18px;
+        box-shadow: 0 14px 32px rgba(15, 42, 66, .09);
+        padding: 1rem;
       }
       .view { display: none; }
       .view.active { display: block; }
-      .section-title { margin: .1rem 0 .35rem; font-size: 1rem; }
+      .section-title { margin: .1rem 0 .35rem; font-size: 1.07rem; }
       .field { display: grid; gap: .35rem; margin-bottom: .7rem; }
-      label { font-size: .85rem; color: #405469; }
+      label { font-size: .84rem; color: #3f5469; letter-spacing: .01em; }
       input, select, textarea {
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: 10px;
         padding: .6rem .65rem;
-        font-size: .95rem;
+        font-size: 16px;
+        background: #ffffff;
+        min-height: 44px;
+      }
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #8ab9de;
+        box-shadow: 0 0 0 3px rgba(90, 159, 210, .18);
       }
       textarea { min-height: 115px; resize: vertical; }
       .row { display: flex; gap: .5rem; }
@@ -162,7 +189,7 @@
         display: flex;
         gap: .5rem;
         align-items: flex-end;
-        margin-bottom: .45rem;
+        margin-bottom: .55rem;
       }
       .chat-toolbar .field { margin-bottom: 0; }
       .mode-wrap {
@@ -230,18 +257,28 @@
         font-size: .85rem;
       }
       .btn-primary { background: var(--accent); color: #fff; }
-      .btn-primary:hover { background: var(--accent2); }
+      .btn-primary:hover { background: var(--accent2); box-shadow: 0 8px 16px rgba(12, 93, 146, .2); }
       .btn-ghost { background: #f3f6fa; color: #24384f; border: 1px solid var(--border); }
+      .btn-ghost:hover { background: #e9f0f7; }
+      .chat-view { gap: .65rem; }
+      .view.chat-view { display: none; }
+      .view.active.chat-view { display: grid; }
+      .chat-surface {
+        border: 1px solid #d6e1ec;
+        background: linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 100%);
+        border-radius: 14px;
+        padding: .7rem;
+      }
       .composer {
         display: flex;
         align-items: center;
         gap: .45rem;
-        border: 1px solid #ccdbea;
+        border: 1px solid #c5d7e8;
         border-radius: 999px;
         background: #ffffff;
-        box-shadow: 0 6px 14px rgba(10, 30, 48, .08);
+        box-shadow: 0 7px 14px rgba(10, 30, 48, .09);
         padding: .35rem .4rem;
-        margin: .45rem 0 .65rem;
+        margin: .1rem 0 .25rem;
       }
       .composer-btn {
         width: 2.1rem;
@@ -281,15 +318,33 @@
         flex: 1;
         border: none;
         outline: none;
-        font-size: .98rem;
+        font-size: 16px;
         background: transparent;
         min-width: 0;
+        min-height: 38px;
       }
       .composer-input::placeholder { color: #7a8b9b; }
       .composer-tools {
         display: inline-flex;
         align-items: center;
         gap: .25rem;
+      }
+      .composer-hint {
+        color: var(--muted);
+        font-size: .78rem;
+        margin: .1rem 0 .25rem .2rem;
+      }
+      .chat-controls {
+        display: flex;
+        gap: .55rem;
+        align-items: end;
+        flex-wrap: wrap;
+      }
+      .chat-controls .field { margin-bottom: 0; min-width: 210px; }
+      .chat-quick-actions {
+        margin-left: auto;
+        display: inline-flex;
+        gap: .45rem;
       }
       .notice { min-height: 1.2rem; font-size: .86rem; margin-top: .25rem; color: var(--muted); }
       .notice.ok { color: var(--ok); }
@@ -310,11 +365,11 @@
       .status.warn { border-color: #e1d0b1; background: #fdf5e8; color: #8b5310; }
       .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: .65rem; }
       .chat-answer {
-        margin-top: .8rem;
+        margin-top: .2rem;
         border: 1px solid var(--border);
-        border-radius: 10px;
-        background: #f8fbff;
-        padding: .7rem;
+        border-radius: 12px;
+        background: #f7fbff;
+        padding: .78rem;
       }
       .chat-answer h1, .chat-answer h2, .chat-answer h3, .chat-answer h4 {
         margin: .55rem 0 .35rem;
@@ -355,6 +410,11 @@
         border-collapse: collapse;
         margin-top: .4rem;
       }
+      .table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
       .table th, .table td {
         border-bottom: 1px solid #e7edf4;
         padding: .45rem;
@@ -362,7 +422,64 @@
         font-size: .86rem;
       }
       .hint { font-size: .84rem; color: var(--muted); margin-top: .3rem; }
-      @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+      @media (max-width: 900px) {
+        .grid-2 { grid-template-columns: 1fr; }
+        .topbar { border-radius: 13px; }
+      }
+      @media (max-width: 680px) {
+        .shell {
+          max-width: 560px;
+          min-height: 100vh;
+          padding: .72rem .62rem calc(1rem + env(safe-area-inset-bottom));
+        }
+        .card {
+          border-radius: 16px;
+          padding: .72rem;
+        }
+        .topbar {
+          align-items: flex-start;
+          flex-wrap: wrap;
+          gap: .65rem;
+        }
+        .top-actions {
+          width: 100%;
+          justify-content: flex-end;
+        }
+        .row {
+          flex-wrap: wrap;
+        }
+        .row > * {
+          min-width: 140px;
+        }
+        .drawer {
+          width: min(360px, 92vw);
+        }
+        .chat-controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .chat-controls .field,
+        .chat-quick-actions {
+          width: 100%;
+          margin-left: 0;
+        }
+        .chat-quick-actions {
+          display: flex;
+          gap: .45rem;
+        }
+        .composer {
+          gap: .35rem;
+          padding: .3rem .35rem;
+        }
+        .composer-btn,
+        .composer-send {
+          width: 2.2rem;
+          height: 2.2rem;
+        }
+        .table th, .table td {
+          white-space: nowrap;
+        }
+      }
     </style>
   </head>
   <body>
@@ -392,13 +509,15 @@
           <button id="menu-intake" class="nav-item"><span>Intake</span><span id="intake-badge" class="status warn">pending</span></button>
           <button id="menu-settings" class="nav-item"><span>Settings</span></button>
           <button id="menu-usage" class="nav-item"><span>Model Usage</span></button>
+          <button id="menu-feedback" class="nav-item"><span>Feedback</span></button>
         </div>
       </aside>
 
       <section class="card">
-        <article id="view-chat" class="view active">
+        <article id="view-chat" class="view active chat-view">
           <h2 class="section-title">Default Chat</h2>
           <p class="muted">Ask a coaching question anytime. Mode controls response depth: Quick is faster, Deep is more thorough.</p>
+          <div class="chat-surface">
           <div class="field">
             <label for="chat-question">Question</label>
             <div class="composer">
@@ -410,8 +529,9 @@
                 <button class="composer-send" id="chat-send" type="button" aria-label="Send">Go</button>
               </div>
             </div>
+            <div class="composer-hint">Enter to send. Shift+Enter for newline where supported.</div>
           </div>
-          <div class="chat-toolbar">
+          <div class="chat-controls">
             <div class="field">
               <label>Mode</label>
               <div class="mode-wrap">
@@ -435,13 +555,14 @@
                 </div>
               </div>
             </div>
-          </div>
-          <div class="row"><button class="btn-ghost" id="chat-clear">Clear</button></div>
-          <div class="row" style="margin-top:.45rem;">
-            <button class="btn-ghost" id="chat-daily-start">Start Daily Check-In With Coach</button>
+            <div class="chat-quick-actions">
+              <button class="btn-ghost" id="chat-clear">Clear</button>
+              <button class="btn-ghost" id="chat-daily-start">Daily Check-In</button>
+            </div>
           </div>
           <div class="notice" id="chat-notice"></div>
           <div id="chat-answer" class="chat-answer" style="display:none;"></div>
+          </div>
         </article>
 
         <article id="view-intake" class="view">
@@ -504,6 +625,12 @@
               <div class="field"><label for="new-password">New Password</label><input id="new-password" type="password" /></div>
               <button class="btn-primary" id="password-save">Change Password</button>
               <div class="notice" id="password-notice"></div>
+              <h3 class="section-title" style="margin-top:1rem;">Data Reset</h3>
+              <div class="row">
+                <button class="btn-ghost" id="reset-user-data">Reinitialize User Data</button>
+                <button class="btn-ghost" id="reset-model-usage">Reset Model Stats</button>
+              </div>
+              <div class="notice" id="reset-notice"></div>
             </div>
           </div>
         </article>
@@ -512,11 +639,55 @@
           <h2 class="section-title">Model Token Usage</h2>
           <p class="muted">Token usage is tracked per user/provider/model for visibility and cost control.</p>
           <button class="btn-ghost" id="usage-refresh">Refresh</button>
-          <table class="table" id="usage-table">
-            <thead><tr><th>Provider</th><th>Model</th><th>Requests</th><th>Prompt</th><th>Completion</th><th>Total</th><th>Rough Cost (USD)</th></tr></thead>
-            <tbody></tbody>
-          </table>
+          <div class="table-wrap">
+            <table class="table" id="usage-table">
+              <thead><tr><th>Provider</th><th>Model</th><th>Requests</th><th>Prompt</th><th>Completion</th><th>Total</th><th>Rough Cost (USD)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
           <div class="hint" id="usage-hint"></div>
+        </article>
+
+        <article id="view-feedback" class="view">
+          <h2 class="section-title">Feature Ideas And Bug Capture</h2>
+          <p class="muted">Capture new feature ideas, bugs, and product suggestions. Entries are shared across users for centralized review.</p>
+          <div class="grid-2">
+            <div>
+              <div class="field">
+                <label for="feedback-category">Type</label>
+                <select id="feedback-category">
+                  <option value="feature">Feature</option>
+                  <option value="idea">Idea</option>
+                  <option value="bug">Bug</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="feedback-title">Title</label>
+                <input id="feedback-title" type="text" placeholder="Short title" />
+              </div>
+              <div class="field">
+                <label for="feedback-details">Details</label>
+                <textarea id="feedback-details" placeholder="What happened or what should be added?"></textarea>
+              </div>
+              <div class="field">
+                <label for="feedback-page">Where in app? (optional)</label>
+                <input id="feedback-page" type="text" placeholder="chat, intake, settings..." />
+              </div>
+              <div class="row">
+                <button class="btn-primary" id="feedback-submit">Submit Entry</button>
+                <button class="btn-ghost" id="feedback-clear-form">Clear Form</button>
+              </div>
+            </div>
+            <div>
+              <h3 class="section-title">Data Actions</h3>
+              <p class="muted">Export all captured entries to CSV or clear all entries from the shared list.</p>
+              <div class="row">
+                <button class="btn-ghost" id="feedback-export">Export CSV</button>
+                <button class="btn-ghost" id="feedback-clear-all">Clear All Entries</button>
+              </div>
+            </div>
+          </div>
+          <div class="notice" id="feedback-notice"></div>
         </article>
       </section>
     </div>
@@ -526,7 +697,7 @@
       if (!token) window.location.href = "/onboarding";
 
       const el = (id) => document.getElementById(id);
-      const views = ["chat", "summary", "intake", "settings", "usage"];
+      const views = ["chat", "summary", "intake", "settings", "usage", "feedback"];
       const intakeState = { sessionId: null, readyToComplete: false };
       const intakeChat = [];
       let speechRecognition = null;
@@ -1315,7 +1486,7 @@
           setNotice("chat-notice", "No image selected.", "warn");
           return;
         }
-        setNotice("chat-notice", "Image selected: " + file.name + ". Upload support will be enabled next.", "ok");
+        setNotice("chat-notice", "Image selected: " + file.name + ". Ready to send.", "ok");
       }
 
       async function changePassword() {
@@ -1340,6 +1511,113 @@
         }
         const body = await res.json().catch(() => ({}));
         setNotice("password-notice", body.detail || "Password update failed.", "error");
+      }
+
+      async function resetModelUsage() {
+        const ok = window.confirm("Reset model usage stats for this account only?");
+        if (!ok) return;
+        setNotice("reset-notice", "Resetting model stats...", "");
+        const res = await fetch("/auth/model-usage", {
+          method: "DELETE",
+          headers: { "Authorization": "Bearer " + token }
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("reset-notice", body.detail || "Could not reset model stats.", "error");
+          return;
+        }
+        const body = await res.json().catch(() => ({}));
+        setNotice("reset-notice", "Model stats reset. Rows removed: " + (body.deleted_rows ?? 0) + ".", "ok");
+        await loadUsage();
+      }
+
+      async function resetUserData() {
+        const ok = window.confirm(
+          "Reinitialize user data (baseline, intake sessions, metrics, scores, daily logs, and chat summaries)? This cannot be undone."
+        );
+        if (!ok) return;
+        setNotice("reset-notice", "Reinitializing user data...", "");
+        const res = await fetch("/auth/data", {
+          method: "DELETE",
+          headers: { "Authorization": "Bearer " + token }
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("reset-notice", body.detail || "Could not reinitialize user data.", "error");
+          return;
+        }
+        const body = await res.json().catch(() => ({}));
+        setNotice("reset-notice", "User data reinitialized. Rows removed: " + (body.deleted_rows ?? 0) + ".", "ok");
+        await loadIntakeStatus();
+        showView("chat");
+      }
+
+      async function submitFeedback() {
+        const payload = {
+          category: el("feedback-category").value,
+          title: el("feedback-title").value.trim(),
+          details: el("feedback-details").value.trim(),
+          page: el("feedback-page").value.trim() || null,
+        };
+        if (!payload.title || !payload.details) {
+          setNotice("feedback-notice", "Title and details are required.", "error");
+          return;
+        }
+        setNotice("feedback-notice", "Saving entry...", "");
+        const res = await fetch("/feedback/entries", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("feedback-notice", body.detail || "Could not save entry.", "error");
+          return;
+        }
+        const body = await res.json().catch(() => ({}));
+        setNotice("feedback-notice", "Saved entry #" + (body.id ?? "?") + ".", "ok");
+        el("feedback-title").value = "";
+        el("feedback-details").value = "";
+        el("feedback-page").value = "";
+      }
+
+      async function exportFeedbackCsv() {
+        setNotice("feedback-notice", "Preparing CSV...", "");
+        const res = await fetch("/feedback/entries/export", {
+          headers: { "Authorization": "Bearer " + token },
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("feedback-notice", body.detail || "Could not export CSV.", "error");
+          return;
+        }
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback_entries.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        setNotice("feedback-notice", "CSV downloaded.", "ok");
+      }
+
+      async function clearAllFeedback() {
+        const ok = window.confirm("Clear all feedback entries for all users?");
+        if (!ok) return;
+        setNotice("feedback-notice", "Clearing shared entries...", "");
+        const res = await fetch("/feedback/entries", {
+          method: "DELETE",
+          headers: { "Authorization": "Bearer " + token },
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("feedback-notice", body.detail || "Could not clear entries.", "error");
+          return;
+        }
+        const body = await res.json().catch(() => ({}));
+        setNotice("feedback-notice", "Cleared entries: " + (body.deleted_rows ?? 0) + ".", "ok");
       }
 
       async function loadUsage() {
@@ -1433,6 +1711,7 @@
       el("menu-intake").addEventListener("click", () => showView("intake"));
       el("menu-settings").addEventListener("click", () => showView("settings"));
       el("menu-usage").addEventListener("click", async () => { showView("usage"); await loadUsage(); });
+      el("menu-feedback").addEventListener("click", () => showView("feedback"));
       el("logout").addEventListener("click", () => { sessionStorage.removeItem("access_token"); window.location.href = "/onboarding"; });
       el("chat-send").addEventListener("click", sendChat);
       el("chat-voice").addEventListener("click", startVoiceInput);
@@ -1466,8 +1745,19 @@
       el("api-key").addEventListener("input", () => { if (el("api-key").value.trim().length > 7) loadModelOptions(); });
       el("ai-save").addEventListener("click", saveAiConfig);
       el("password-save").addEventListener("click", changePassword);
+      el("reset-user-data").addEventListener("click", resetUserData);
+      el("reset-model-usage").addEventListener("click", resetModelUsage);
       el("usage-refresh").addEventListener("click", loadUsage);
       el("summary-refresh").addEventListener("click", loadOverallSummary);
+      el("feedback-submit").addEventListener("click", submitFeedback);
+      el("feedback-export").addEventListener("click", exportFeedbackCsv);
+      el("feedback-clear-all").addEventListener("click", clearAllFeedback);
+      el("feedback-clear-form").addEventListener("click", () => {
+        el("feedback-title").value = "";
+        el("feedback-details").value = "";
+        el("feedback-page").value = "";
+        setNotice("feedback-notice", "", "");
+      });
       el("menu-toggle").addEventListener("click", toggleDrawer);
       el("menu-close").addEventListener("click", closeDrawer);
       el("menu-overlay").addEventListener("click", closeDrawer);
