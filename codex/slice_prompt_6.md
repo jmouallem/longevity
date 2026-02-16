@@ -15,6 +15,10 @@ Implement intake lifecycle in the main workspace:
   - Intake
   - Settings
   - Model Usage
+- Chat UX behavior:
+  - processing/progress notice while coach pipeline runs
+  - follow-up prompts rendered as coach questions for the user to answer next
+  - readable markdown-style answer rendering
 - Onboarding completion screen supports:
   - `Start Intake Now`
   - `Skip For Now`
@@ -46,5 +50,5 @@ Implement intake lifecycle in the main workspace:
   - updating AI model config,
   - changing password.
 - Token usage endpoint returns per-model counters.
+- Chat view clearly distinguishes successful response vs practical fallback response.
 - Test suite passes.
-

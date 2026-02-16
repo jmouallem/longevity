@@ -1,9 +1,10 @@
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Baseline, CompositeScore, DomainScore, Metric
+from app.db.models import Baseline, CompositeScore, ConversationSummary, DomainScore, Metric
 
 CONTEXT_METRIC_TYPES = [
     "sleep_hours",
@@ -53,6 +54,13 @@ def build_coaching_context(db: Session, user_id: int) -> dict[str, Any]:
         .order_by(CompositeScore.computed_at.desc())
         .first()
     )
+    recent_summaries = (
+        db.query(ConversationSummary)
+        .filter(ConversationSummary.user_id == user_id)
+        .order_by(ConversationSummary.created_at.desc())
+        .limit(5)
+        .all()
+    )
 
     by_type: dict[str, list[float]] = {}
     for item in metrics:
@@ -69,8 +77,20 @@ def build_coaching_context(db: Session, user_id: int) -> dict[str, Any]:
 
     baseline_summary = None
     if baseline:
+        top_goals: list[str] = []
+        if baseline.top_goals_json:
+            try:
+                parsed = json.loads(baseline.top_goals_json)
+                if isinstance(parsed, list):
+                    top_goals = [str(item).strip() for item in parsed if str(item).strip()][:5]
+            except json.JSONDecodeError:
+                top_goals = []
         baseline_summary = {
             "primary_goal": baseline.primary_goal,
+            "top_goals": top_goals,
+            "goal_notes": baseline.goal_notes,
+            "age_years": baseline.age_years,
+            "sex_at_birth": baseline.sex_at_birth,
             "activity_level": baseline.activity_level,
             "sleep_hours": baseline.sleep_hours,
             "stress": baseline.stress,
@@ -99,6 +119,16 @@ def build_coaching_context(db: Session, user_id: int) -> dict[str, Any]:
         }
 
     missing_data = [k for k, v in metric_summary.items() if v["count"] == 0]
+    recent_conversations = [
+        {
+            "question": row.question,
+            "answer_summary": row.answer_summary,
+            "tags": row.tags,
+            "safety_flags": row.safety_flags,
+            "created_at": row.created_at.isoformat(),
+        }
+        for row in recent_summaries
+    ]
 
     return {
         "baseline_present": baseline is not None,
@@ -106,4 +136,5 @@ def build_coaching_context(db: Session, user_id: int) -> dict[str, Any]:
         "metrics_7d_summary": metric_summary,
         "latest_scores": score_summary,
         "missing_data": missing_data,
+        "recent_conversations": recent_conversations,
     }

@@ -161,10 +161,14 @@ Use FastAPI TestClient.
 - baseline missing returns please complete baseline
 - LLM OK returns response with required fields
 - LLM malformed JSON returns fallback response (still valid shape)
+- LLM returns partial/mixed JSON inside `answer` -> response normalizer returns clean readable text
+- GPT-5 empty-output or incomplete-output behavior still returns usable fallback/salvaged text
 - safety flags override LLM (escalation path)
 - model catalog endpoint returns provider models or fallback list deterministically
 - best default model is selected from available model list
 - task router selects utility model for summarization/routing/extraction tasks
+- auto mode resolves to quick mode for cost guardrails
+- duplicate identical questions within cache TTL return stable cached response shape
 
 ---
 
@@ -229,6 +233,8 @@ Assert these, not quality:
 - Workspace settings endpoints (password change) enforce auth and validation
 - Intake coach asks one question at a time and advances deterministically
 - Risk/concern flags trigger deeper follow-up questions in intake flow
+- Coach follow-up questions are framed as user-response prompts
+- Token and mode routing behavior remain deterministic and testable
 
 ---
 

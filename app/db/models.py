@@ -146,6 +146,7 @@ class ConversationSummary(Base):
     answer_summary: Mapped[str] = mapped_column(String(1024), nullable=False)
     tags: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     safety_flags: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    agent_trace_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     user: Mapped[User] = relationship("User", back_populates="conversation_summaries")
 

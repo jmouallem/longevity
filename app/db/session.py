@@ -64,6 +64,10 @@ def create_tables() -> None:
         if "sex_at_birth" not in baseline_columns:
             conn.execute(text("ALTER TABLE baselines ADD COLUMN sex_at_birth VARCHAR(32)"))
 
+        conv_columns = {row[1] for row in conn.execute(text("PRAGMA table_info(conversation_summaries)")).fetchall()}
+        if "agent_trace_json" not in conv_columns:
+            conn.execute(text("ALTER TABLE conversation_summaries ADD COLUMN agent_trace_json TEXT"))
+
 
 def get_db():
     db: Session = SessionLocal()

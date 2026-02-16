@@ -65,6 +65,15 @@ Single Docker Container (Render Web Service)
 - Utility tasks (routing/summarization/extraction/classification) use utility profile by default.
 - Reasoning-heavy tasks use reasoning profile by default.
 
+### 3.6 Cost + Reliability Guardrails
+- Auto chat mode defaults to quick path for cost control.
+- Quick path uses minimal agent fan-out (safety/risk specialist + synthesis).
+- Deep-think remains explicit and user-invoked.
+- Per-task token budgets are enforced (utility < reasoning < deep-think).
+- Short TTL response cache deduplicates repeated identical submissions.
+- GPT-5 provider path prefers Responses API and falls back safely when text output is incomplete.
+- Fallback guidance remains useful and safe when provider errors/timeouts occur.
+
 ---
 
 ## 4. Component Breakdown
@@ -77,6 +86,9 @@ Responsibilities:
 - Intake completion status indicator
 - Guided question prompts
 - Settings flows (AI config, password change)
+- Chat progress feedback during multi-step reasoning (context, specialists, synthesis)
+- Rendered answer formatting optimized for readable markdown-like output
+- Coach follow-up questions presented as questions for the user to answer next
 
 Technology:
 - React or Next.js SPA
@@ -94,9 +106,11 @@ Responsibilities:
 - Intake status + baseline upsert endpoints
 - Settings endpoints (AI config, password change)
 - Model usage stats endpoint
-- Intake coach orchestration endpoints (planned)
+- Intake coach orchestration endpoints
 - Score calculation
 - Experiment lifecycle logic
+- LLM resilience logic (timeouts/retries/fallback path)
+- Cost guardrails (mode routing + token caps + duplicate-response cache)
 
 ---
 
@@ -119,6 +133,10 @@ Workflow:
 4. Collect structured outputs
 5. Synthesize recommendations
 6. Wrap in persona tone
+
+Quick Mode Optimization:
+- Run a constrained pipeline by default (risk/safety + synthesis).
+- Reserve deeper multi-agent paths for explicit deep-think use.
 
 ### 4.5 Model Catalog Service
 
@@ -178,6 +196,17 @@ Core tables:
 4. Synthesis merges suggestions
 5. Persona formats final response
 6. Guided question suggestions added
+
+### 5.3 Cost-Optimized Chat Flow (Current)
+
+1. User submits question (Auto defaults to Quick)
+2. Backend loads compact structured context
+3. Quick path runs minimal agents
+4. LLM response normalized to stable structured output
+5. Answer rendered with readable markdown sections
+6. Coach follow-up questions shown as user prompts for next turn
+7. Response and usage stats persisted
+8. Duplicate request within TTL may return cached response
 
 ---
 

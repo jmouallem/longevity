@@ -88,9 +88,9 @@ POST /auth/model-options
 
 POST /intake/baseline
 GET  /intake/status
-POST /intake/conversation/start     (planned)
-POST /intake/conversation/answer    (planned)
-POST /intake/conversation/complete  (planned)
+POST /intake/conversation/start
+POST /intake/conversation/answer
+POST /intake/conversation/complete
 POST /metrics
 GET  /dashboard/summary
 POST /integrations/apple-health/sync
@@ -102,6 +102,11 @@ POST /coach/voice
 
 GET  /experiments
 POST /experiments
+
+Internal behavior notes:
+- `/coach/question` must return stable structured JSON even on provider failures.
+- Chat responses should preserve readable markdown formatting in `answer`.
+- Follow-up items should be direct coach questions for user reply.
 
 ---
 
@@ -126,6 +131,14 @@ function coach_question(user_id, question):
     save_conversation_summary()
 
     return final_response
+
+Cost-optimized runtime behavior:
+- Auto mode resolves to quick mode by default.
+- Quick mode runs constrained orchestration (risk/safety + synthesis).
+- Deep-think is explicit and routes to deep thinker profile.
+- Enforce per-task output token ceilings.
+- Apply short TTL duplicate-response cache for repeated identical questions.
+- Prefer provider path with lowest empty-output failure risk for GPT-5 models.
 
 ---
 
@@ -227,4 +240,3 @@ Phase 4:
 - Modular connector interface for third-party data sync
 - Apple Health normalized metric sync (planned)
 - Hume normalized signal sync (planned)
-

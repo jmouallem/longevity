@@ -62,6 +62,9 @@ def decrypt_api_key(encrypted_api_key: str) -> str:
 
 
 def mask_api_key(api_key: str) -> str:
-    if len(api_key) <= 8:
-        return "*" * len(api_key)
-    return f"{api_key[:4]}...{api_key[-4:]}"
+    if not api_key:
+        return ""
+    if len(api_key) <= 4:
+        return "****"
+    # Keep mask short to avoid UI overflow while preserving a tiny suffix hint.
+    return "********" + api_key[-4:]

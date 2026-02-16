@@ -34,7 +34,7 @@ Its purpose is to capture essential, relatively static project context to ensure
 - Structured baseline data collection and storage
 - Main workspace UI with menu-based Chat/Intake/Settings/Usage views
 - Skippable and re-runnable intake lifecycle from workspace menu
-- Planned AI-led conversational intake coach agent for one-question-at-a-time baseline capture
+- AI-led conversational intake coach agent for one-question-at-a-time baseline capture
 - Future: conversational/multimodal intake mode (while retaining structured storage)
 - Adaptive intake with goal/risk/engagement-based questioning and tone
 - Future: modular external data connectors (Apple Health, Hume) with normalized sync into internal datasets
@@ -99,6 +99,12 @@ The repository includes the following core documents:
 - Model selectors should show cost metadata when available
 - External LLM APIs permitted for coaching
 - Strict structured JSON responses with fallback logic required
+- Cost and reliability controls:
+  - auto mode defaults to quick path,
+  - quick path uses constrained agent fan-out,
+  - per-task output token budgets are enforced,
+  - short TTL response cache deduplicates repeated requests,
+  - GPT-5 request path prefers Responses API with safe fallback handling.
 
 ### External Data Integration (Planned)
 
@@ -281,7 +287,7 @@ Update this document when:
 - Slice 4: deterministic offline AI testing harness
 - Slice 5: GUI onboarding + initialization gate (account + LLM config before intake)
 - Slice 6: workspace menu + optional/re-runnable intake + settings + model token usage stats
-- Slice 7 (planned): AI-led intake coach interview + concern-driven probing + structured baseline mapping
+- Slice 7: AI-led intake coach interview + concern-driven probing + structured baseline mapping
 
 
 

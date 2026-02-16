@@ -109,6 +109,9 @@ This phase makes the product real.
 - [ ] Route utility sub-tasks (summarization/routing/extraction) to utility model profile
 - [ ] Return contextual response
 - [ ] Save conversation summary
+- [ ] Return readable markdown-style answer text for easy scanning
+- [ ] Present coach follow-up questions as user-response prompts (not user-suggested asks)
+- [ ] Provide practical fallback guidance when provider/model call fails
 
 ### 1.4 Simple Domain Scoring
 - [ ] Sleep score logic
@@ -296,6 +299,10 @@ Users can log via text, voice, or photo.
 ## Goal: Production readiness
 
 - [ ] Performance optimization
+- [ ] Cost optimization guardrails (auto->quick default, constrained quick fan-out)
+- [ ] Per-task token budget tuning with env-configurable ceilings
+- [ ] GPT-5 reliability fallback hardening (empty-output handling)
+- [ ] Duplicate request cache policy tuning and observability
 - [ ] Rate limiting
 - [ ] Logging & audit trail
 - [ ] Error handling improvements

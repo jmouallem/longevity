@@ -422,6 +422,23 @@ The system must:
 - Offer monitoring advice
 - Suggest next best questions
 
+### 11.1 Interaction + Presentation Requirements
+
+- Chat must provide clear progress feedback while processing (for example: context load, specialist passes, synthesis).
+- Final answer must be readable markdown-style text with short sections, bullets, and spacing.
+- The UI must render follow-up items as **coach questions for the user to answer next**, not as questions the user should ask the system.
+- Follow-up questions should drive iterative refinement and allow the system to store important structured details over time.
+- On provider failure, the user should still receive practical and safe fallback guidance.
+
+### 11.2 Cost + Latency Guardrails
+
+- Auto mode should default to a cost-efficient quick path.
+- Quick path should run constrained orchestration by default.
+- Deep-think should remain explicit and user-invoked.
+- Per-task token budgets must be enforced.
+- Duplicate submissions within a short time window should use response caching where safe.
+- Provider retries/fallbacks should avoid excessive duplicate billable calls.
+
 ---
 
 # 12. Guided Question Engine

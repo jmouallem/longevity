@@ -1,4 +1,8 @@
 import json
+import logging
+import os
+import re
+import time
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
@@ -18,9 +22,12 @@ from app.core.safety import (
 )
 from app.db.models import ConversationSummary, User
 from app.db.session import get_db
-from app.services.llm import LLMClient, get_llm_client
+from app.services.llm import LLMClient, LLMRequestError, get_llm_client
 
 router = APIRouter(prefix="/coach", tags=["coach"])
+logger = logging.getLogger("uvicorn.error")
+CACHE_TTL_SECONDS = int(os.getenv("COACH_CACHE_TTL_SECONDS", "75"))
+_COACH_RESPONSE_CACHE: dict[tuple[int, str, str, bool], tuple[float, Any]] = {}
 
 
 class CoachMode(str, Enum):
@@ -49,13 +56,6 @@ class CoachQuestionResponse(BaseModel):
     disclaimer: str
 
 
-def request_coaching_json(
-    db: Session, user_id: int, prompt: str, llm_client: LLMClient, deep_think: bool = False
-) -> dict[str, Any]:
-    task_type = "deep_think" if deep_think else "reasoning"
-    return llm_client.generate_json(db=db, user_id=user_id, prompt=prompt, task_type=task_type)
-
-
 def _disclaimer() -> str:
     return "This is coaching guidance, not medical diagnosis."
 
@@ -79,11 +79,91 @@ def _fallback_response(answer: str, safety_flags: Optional[list[str]] = None) ->
             }
         ],
         suggested_questions=[
-            "Want a 7-day plan based on your current trends?",
-            "Want help choosing one metric to prioritize this week?",
-            "Want a quick daily check-in template?",
+            "What is the one outcome you want to improve first over the next 14 days?",
+            "What single daily metric can you reliably track at the same time each day?",
+            "What usually gets in the way of consistency for you during a typical week?",
         ],
         safety_flags=safety_flags or [],
+        disclaimer=_disclaimer(),
+    )
+
+
+def _practical_non_llm_response(payload: CoachQuestionRequest, context: dict[str, Any], flag: str) -> CoachQuestionResponse:
+    question_lower = payload.question.lower()
+    is_supplement = "supplement" in question_lower or has_supplement_topic(payload.question)
+    if flag == "llm_rate_limited":
+        issue_prefix = "I hit provider limits right now"
+    elif flag in {"llm_auth_error", "llm_model_not_found"}:
+        issue_prefix = "I could not use your configured AI model for this request"
+    else:
+        issue_prefix = "I hit a temporary AI service/network issue right now"
+    if is_supplement:
+        return CoachQuestionResponse(
+            answer=(
+                f"{issue_prefix}, so here is a safe starter supplement framework you can use immediately. "
+                "First, list exact dosages and labels for omega-3, CoQ10, Centrum 50+, B12, and vitamin D. "
+                "Then remove overlap risk (multi + single vitamins) before adding anything new."
+            ),
+            rationale_bullets=[
+                "Rate limits prevented a full model-generated plan in this request.",
+                "Duplicate nutrients are common when combining a multivitamin with stand-alone supplements.",
+                "Dose, timing, and symptom tracking are the highest-value first steps.",
+                "Use one change at a time for 7-14 days to attribute effects.",
+            ],
+            recommended_actions=[
+                RecommendedAction(
+                    title="Build a clean baseline stack",
+                    steps=[
+                        "Create one table with supplement name, dose, timing, and reason.",
+                        "Mark overlaps from Centrum 50+ against B12 and vitamin D.",
+                        "Pause non-essential extras until overlap is clarified.",
+                    ],
+                ),
+                RecommendedAction(
+                    title="Run a 2-week response check",
+                    steps=[
+                        "Keep timing consistent each day.",
+                        "Track energy, sleep quality, and GI tolerance daily (1-10).",
+                        "If side effects appear, revert to last well-tolerated setup.",
+                    ],
+                ),
+            ],
+            suggested_questions=[
+                "What are the exact dosages on each bottle (EPA+DHA total, vitamin D IU/form, B12 mcg, CoQ10 mg)?",
+                "Are you taking any prescription meds (statin, blood thinners, BP, diabetes, thyroid), or have reflux/anxiety/palpitations?",
+                "What are your height, current weight, target weight, and typical daily eating pattern (including alcohol)?",
+            ],
+            safety_flags=[flag],
+            disclaimer=_disclaimer(),
+        )
+
+    goal = ((context.get("baseline") or {}).get("primary_goal") or "your goal")
+    return CoachQuestionResponse(
+        answer=(
+            f"{issue_prefix}, but we can still run a practical plan for {goal}. "
+            "Use one small daily action this week and track one outcome metric."
+        ),
+        rationale_bullets=[
+            "Rate limits prevented a full model-generated response in this request.",
+            "Simple plans with one measurable behavior are easiest to execute.",
+            "Weekly review improves adaptation and consistency.",
+        ],
+        recommended_actions=[
+            RecommendedAction(
+                title="Run a 7-day micro-plan",
+                steps=[
+                    "Pick one behavior linked to your goal.",
+                    "Pick one metric to track at the same time daily.",
+                    "Review trend after 7 days before changing plan.",
+                ],
+            ),
+        ],
+        suggested_questions=[
+            "What exact behavior are you willing to do daily for the next 7 days?",
+            "What metric will you track daily to verify this is working?",
+            "What time each day will you complete the check-in so it is realistic and repeatable?",
+        ],
+        safety_flags=[flag],
         disclaimer=_disclaimer(),
     )
 
@@ -115,25 +195,233 @@ def _safe_actions(value: Any) -> list[RecommendedAction]:
     return actions[:3]
 
 
-def _build_llm_prompt(payload: CoachQuestionRequest, context: dict[str, Any]) -> str:
-    instructions = {
-        "tone": "warm, practical, science-informed, never shame-based",
-        "mode": payload.mode.value,
-        "must_include": [
-            "answer",
-            "rationale_bullets (3-7)",
-            "recommended_actions (1-3 items with title + steps)",
-            "suggested_questions (3-8)",
-            "safety_flags",
+def _extract_answer_from_json_blob(text: str) -> str:
+    candidate = (text or "").strip()
+    if not candidate:
+        return ""
+    if '"answer"' not in candidate:
+        return ""
+    match = re.search(r'"answer"\s*:\s*"((?:\\.|[^"\\])*)"', candidate, flags=re.DOTALL)
+    if not match:
+        return ""
+    raw_value = match.group(1)
+    try:
+        return str(json.loads(f"\"{raw_value}\"")).strip()
+    except json.JSONDecodeError:
+        return raw_value.replace("\\n", "\n").replace('\\"', '"').strip()
+
+
+def _normalize_answer_text(answer: str) -> str:
+    text = (answer or "").strip()
+    if not text:
+        return text
+    extracted = _extract_answer_from_json_blob(text)
+    if extracted:
+        return extracted
+    # If the model echoed a malformed JSON object, hide it and keep only any prefix text.
+    if "{" in text and '"answer"' in text:
+        return text.split("{", 1)[0].strip() or "I generated a partial response. Please retry."
+    return text
+
+
+def _response_from_raw(raw: dict[str, Any], mode: str) -> CoachQuestionResponse:
+    answer = ""
+    for key in ("answer", "final_answer", "response", "content", "message", "summary"):
+        candidate = str(raw.get(key, "")).strip()
+        if candidate:
+            answer = candidate
+            break
+    if not answer:
+        answer = (
+            "Here is a practical next step: run one conservative 7-day experiment, "
+            "track daily response, and adjust based on trend direction."
+        )
+    answer = _normalize_answer_text(answer)
+    rationale_bullets = _safe_list(
+        raw.get("rationale_bullets"),
+        min_items=3,
+        max_items=7,
+        fallback=[
+            "Your baseline and 7-day trends were used to shape this answer.",
+            "Focus on consistency before increasing plan complexity.",
+            "A weekly review helps adjust the plan with better signal.",
         ],
-    }
+    )
+    recommended_actions = _safe_actions(raw.get("recommended_actions"))
+    if not recommended_actions:
+        recommended_actions = _fallback_response("x").recommended_actions
+    suggested_questions = _safe_list(
+        raw.get("suggested_questions"),
+        min_items=3,
+        max_items=8,
+        fallback=_fallback_response("x").suggested_questions,
+    )
+    safety_flags = _safe_list(raw.get("safety_flags"), min_items=0, max_items=8, fallback=[])
+    return CoachQuestionResponse(
+        answer=apply_longevity_alchemist_voice(answer, mode),
+        rationale_bullets=rationale_bullets,
+        recommended_actions=recommended_actions[:3],
+        suggested_questions=suggested_questions,
+        safety_flags=safety_flags,
+        disclaimer=_disclaimer(),
+    )
+
+
+def _agent_profiles(include_supplement_audit: bool) -> list[dict[str, str]]:
+    profiles = [
+        {
+            "id": "goal_strategist",
+            "title": "Goal Strategist",
+            "instruction": (
+                "Prioritize the plan against user's primary and top goals. "
+                "Recommend the highest-leverage sequence of changes."
+            ),
+            "task_type": "reasoning",
+        },
+        {
+            "id": "risk_guard",
+            "title": "Risk Guard",
+            "instruction": (
+                "Identify safety constraints, contraindication risks, overreach, and missing clarifiers. "
+                "Be conservative and non-alarmist."
+            ),
+            "task_type": "utility",
+        },
+        {
+            "id": "behavior_designer",
+            "title": "Behavior Designer",
+            "instruction": (
+                "Turn strategy into practical habits, schedules, and tracking steps that are easy to execute."
+            ),
+            "task_type": "reasoning",
+        },
+    ]
+    if include_supplement_audit:
+        profiles.append(
+            {
+                "id": "supplement_auditor",
+                "title": "Supplement Auditor",
+                "instruction": (
+                    "Review supplement stack for overlap, timing, safety caveats, and monitoring suggestions. "
+                    "Do not diagnose disease."
+                ),
+                "task_type": "deep_think",
+            }
+        )
+    return profiles
+
+
+def _build_agent_prompt(
+    *,
+    question: str,
+    context_hint: Optional[str],
+    context: dict[str, Any],
+    mode: str,
+    agent_title: str,
+    agent_instruction: str,
+    prior_agents: Optional[list[dict[str, Any]]] = None,
+) -> str:
     body = {
-        "question": payload.question,
-        "context_hint": payload.context_hint,
+        "question": question,
+        "context_hint": context_hint,
         "context": context,
-        "instructions": instructions,
+        "agent_profile": {
+            "name": agent_title,
+            "instruction": agent_instruction,
+        },
+        "prior_agent_outputs": prior_agents or [],
+        "instructions": {
+            "tone": "warm, practical, science-informed, never shame-based",
+            "mode": mode,
+            "format": (
+                "answer must be readable markdown with short sections, bullets, and spacing for easy human scanning. "
+                "Avoid one long paragraph."
+            ),
+            "must_include": [
+                "answer",
+                "rationale_bullets (3-7)",
+                "recommended_actions (1-3 items with title + steps)",
+                "suggested_questions (3-8 direct coach questions for the user to answer next)",
+                "safety_flags",
+            ],
+        },
     }
     return json.dumps(body, separators=(",", ":"))
+
+
+def _run_agentic_pipeline(
+    *,
+    db: Session,
+    user_id: int,
+    payload: CoachQuestionRequest,
+    context: dict[str, Any],
+    llm_client: LLMClient,
+) -> tuple[CoachQuestionResponse, list[dict[str, Any]]]:
+    include_supplement_audit = has_supplement_topic(payload.question)
+    if payload.mode == CoachMode.quick and not payload.deep_think:
+        # Cost-optimized quick path: one specialist pass + synthesis.
+        profiles = [
+            {
+                "id": "risk_guard",
+                "title": "Risk Guard",
+                "instruction": (
+                    "Identify safety constraints, contraindication risks, overreach, and missing clarifiers. "
+                    "Be conservative and non-alarmist."
+                ),
+                "task_type": "utility",
+            }
+        ]
+    else:
+        profiles = _agent_profiles(include_supplement_audit=include_supplement_audit)
+    agent_outputs: list[dict[str, Any]] = []
+    for profile in profiles:
+        prompt = _build_agent_prompt(
+            question=payload.question,
+            context_hint=payload.context_hint,
+            context=context,
+            mode=payload.mode.value,
+            agent_title=profile["title"],
+            agent_instruction=profile["instruction"],
+            prior_agents=agent_outputs,
+        )
+        task_type = profile["task_type"]
+        if payload.deep_think and task_type == "reasoning":
+            task_type = "deep_think"
+        raw = llm_client.generate_json(db=db, user_id=user_id, prompt=prompt, task_type=task_type)
+        agent_outputs.append(
+            {
+                "agent_id": profile["id"],
+                "agent_title": profile["title"],
+                "task_type": task_type,
+                "answer": str(raw.get("answer", "")).strip(),
+                "rationale_bullets": _safe_list(raw.get("rationale_bullets"), min_items=0, max_items=8, fallback=[]),
+                "recommended_actions": raw.get("recommended_actions", []),
+                "suggested_questions": _safe_list(raw.get("suggested_questions"), min_items=0, max_items=8, fallback=[]),
+                "safety_flags": _safe_list(raw.get("safety_flags"), min_items=0, max_items=8, fallback=[]),
+            }
+        )
+
+    synthesis_prompt = _build_agent_prompt(
+        question=payload.question,
+        context_hint=payload.context_hint,
+        context=context,
+        mode=payload.mode.value,
+        agent_title="Orchestrator",
+        agent_instruction=(
+            "Synthesize all agent outputs into one final coaching response. "
+            "Resolve conflicts conservatively and prefer safer, actionable steps."
+        ),
+        prior_agents=agent_outputs,
+    )
+    synthesis_task_type = "deep_think" if payload.deep_think else "reasoning"
+    synthesis_raw = llm_client.generate_json(
+        db=db,
+        user_id=user_id,
+        prompt=synthesis_prompt,
+        task_type=synthesis_task_type,
+    )
+    response = _response_from_raw(synthesis_raw, payload.mode.value)
+    return response, agent_outputs
 
 
 def _tags_from_context(payload: CoachQuestionRequest, context: dict[str, Any]) -> str:
@@ -148,6 +436,31 @@ def _tags_from_context(payload: CoachQuestionRequest, context: dict[str, Any]) -
     return ",".join(tags[:5])
 
 
+def _cache_key(user_id: int, payload: CoachQuestionRequest) -> tuple[int, str, str, bool]:
+    normalized_q = " ".join(payload.question.lower().split())
+    return (user_id, normalized_q, payload.mode.value, bool(payload.deep_think))
+
+
+def _cache_get(user_id: int, payload: CoachQuestionRequest) -> Optional[CoachQuestionResponse]:
+    if CACHE_TTL_SECONDS <= 0:
+        return None
+    key = _cache_key(user_id, payload)
+    entry = _COACH_RESPONSE_CACHE.get(key)
+    if not entry:
+        return None
+    ts, response = entry
+    if (time.time() - ts) > CACHE_TTL_SECONDS:
+        _COACH_RESPONSE_CACHE.pop(key, None)
+        return None
+    return response
+
+
+def _cache_set(user_id: int, payload: CoachQuestionRequest, response: CoachQuestionResponse) -> None:
+    if CACHE_TTL_SECONDS <= 0:
+        return
+    _COACH_RESPONSE_CACHE[_cache_key(user_id, payload)] = (time.time(), response)
+
+
 def _persist_summary(
     db: Session,
     user_id: int,
@@ -155,6 +468,7 @@ def _persist_summary(
     answer: str,
     tags: str,
     safety_flags: list[str],
+    agent_trace: Optional[list[dict[str, Any]]] = None,
 ) -> None:
     summary = ConversationSummary(
         user_id=user_id,
@@ -163,6 +477,7 @@ def _persist_summary(
         answer_summary=answer[:1024],
         tags=tags or None,
         safety_flags=",".join(safety_flags) if safety_flags else None,
+        agent_trace_json=(json.dumps(agent_trace, separators=(",", ":")) if agent_trace else None),
     )
     db.add(summary)
     db.commit()
@@ -175,6 +490,17 @@ def ask_coach_question(
     db: Session = Depends(get_db),
     llm_client: LLMClient = Depends(get_llm_client),
 ) -> CoachQuestionResponse:
+    cached = _cache_get(user.id, payload)
+    if cached is not None:
+        _persist_summary(
+            db=db,
+            user_id=user.id,
+            question=payload.question,
+            answer=cached.answer,
+            tags="cached_response",
+            safety_flags=cached.safety_flags,
+        )
+        return cached
     urgent_flags = detect_urgent_flags(payload.question)
     if urgent_flags:
         emergency = emergency_response()
@@ -209,47 +535,31 @@ def ask_coach_question(
         return response
 
     llm_error = False
+    agent_trace: list[dict[str, Any]] = []
     try:
-        llm_prompt = _build_llm_prompt(payload, context)
-        raw = request_coaching_json(
+        response, agent_trace = _run_agentic_pipeline(
             db=db,
             user_id=user.id,
-            prompt=llm_prompt,
+            payload=payload,
+            context=context,
             llm_client=llm_client,
-            deep_think=payload.deep_think,
         )
-        answer = str(raw.get("answer", "")).strip()
-        if not answer:
-            raise ValueError("missing answer")
-        rationale_bullets = _safe_list(
-            raw.get("rationale_bullets"),
-            min_items=3,
-            max_items=7,
-            fallback=[
-                "Your baseline and 7-day trends were used to shape this answer.",
-                "Focus on consistency before increasing plan complexity.",
-                "A weekly review helps adjust the plan with better signal.",
-            ],
-        )
-        recommended_actions = _safe_actions(raw.get("recommended_actions"))
-        if not recommended_actions:
-            recommended_actions = _fallback_response("x").recommended_actions
-        suggested_questions = _safe_list(
-            raw.get("suggested_questions"),
-            min_items=3,
-            max_items=8,
-            fallback=_fallback_response("x").suggested_questions,
-        )
-        safety_flags = _safe_list(raw.get("safety_flags"), min_items=0, max_items=8, fallback=[])
-        response = CoachQuestionResponse(
-            answer=apply_longevity_alchemist_voice(answer, payload.mode.value),
-            rationale_bullets=rationale_bullets,
-            recommended_actions=recommended_actions[:3],
-            suggested_questions=suggested_questions,
-            safety_flags=safety_flags,
-            disclaimer=_disclaimer(),
-        )
-    except Exception:
+    except LLMRequestError as exc:
+        logger.exception("coach_llm_request_error user_id=%s detail=%s", user.id, str(exc))
+        llm_error = True
+        detail_flag = "llm_unavailable"
+        if exc.status_code == 401:
+            detail_flag = "llm_auth_error"
+        elif exc.status_code == 404:
+            detail_flag = "llm_model_not_found"
+        elif exc.status_code == 429:
+            detail_flag = "llm_rate_limited"
+        elif exc.status_code and exc.status_code >= 500:
+            detail_flag = "llm_provider_error"
+        # Always provide practical guidance even when model generation fails.
+        response = _practical_non_llm_response(payload=payload, context=context, flag=detail_flag)
+    except Exception as exc:
+        logger.exception("coach_unhandled_error user_id=%s detail=%s", user.id, str(exc))
         llm_error = True
         response = _fallback_response(
             answer=(
@@ -273,5 +583,7 @@ def ask_coach_question(
         answer=response.answer,
         tags=_tags_from_context(payload, context),
         safety_flags=response.safety_flags,
+        agent_trace=agent_trace,
     )
+    _cache_set(user.id, payload, response)
     return response

@@ -110,6 +110,9 @@
 - [ ] Workspace includes chat, intake, settings, and usage views
 - [ ] Settings include AI config updates
 - [ ] Settings include password change
+- [ ] Chat shows processing progress feedback during reasoning pipeline
+- [ ] Chat answer rendering is readable markdown-style (sections/bullets/spacing)
+- [ ] Follow-up prompts are framed as coach questions for the user to answer next
 ---
 
 # 4?? Goal Definition
@@ -168,6 +171,11 @@
 - [ ] Supplement safety checks supported
 - [ ] Coaching references stored metrics
 - [ ] Reasoning explained clearly
+- [ ] Provider failures still return practical fallback guidance
+- [ ] Auto mode defaults to cost-efficient quick path
+- [ ] Quick mode uses constrained orchestration by default
+- [ ] Per-task token ceilings are enforced
+- [ ] Duplicate identical submissions can return short-TTL cached responses
 
 ---
 

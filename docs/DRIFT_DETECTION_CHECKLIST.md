@@ -48,6 +48,10 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 - [ ] Deep-think submissions route to deep thinker model profile by default.
 - [ ] Utility tasks route to utility model profile by default.
 - [ ] Reasoning tasks route to reasoning model profile by default.
+- [ ] Auto mode cost guardrail defaults to quick path unless user explicitly selects deep.
+- [ ] Quick mode orchestration stays constrained (no accidental full fan-out).
+- [ ] Per-task token ceilings are enforced from configuration.
+- [ ] Empty-output provider responses are handled with safe fallback/salvage logic.
 
 ---
 
@@ -143,6 +147,7 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 
 - [ ] Responses include practical next actions.
 - [ ] Suggested next questions are present (guided questioning).
+- [ ] Follow-up prompts are clearly coach-to-user questions to answer next.
 - [ ] Tone remains warm and supportive (no shame).
 - [ ] The system is still scientific coach, not generic advice bot.
 - [ ] Setup completion offers both start-intake-now and skip-for-now paths.

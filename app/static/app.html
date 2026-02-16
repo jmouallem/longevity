@@ -158,6 +158,77 @@
       textarea { min-height: 115px; resize: vertical; }
       .row { display: flex; gap: .5rem; }
       .row > * { flex: 1; }
+      .chat-toolbar {
+        display: flex;
+        gap: .5rem;
+        align-items: flex-end;
+        margin-bottom: .45rem;
+      }
+      .chat-toolbar .field { margin-bottom: 0; }
+      .mode-wrap {
+        position: relative;
+        min-width: 220px;
+      }
+      .mode-button {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--border);
+        background: #f4f8fc;
+        color: #213f57;
+        padding: .58rem .65rem;
+      }
+      .mode-button .caret {
+        font-size: .72rem;
+        opacity: .8;
+      }
+      .mode-panel {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        z-index: 5;
+        width: min(320px, 82vw);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 12px 24px rgba(21, 45, 66, .16);
+        padding: .35rem;
+      }
+      .mode-panel[hidden] { display: none; }
+      .mode-option {
+        width: 100%;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        background: transparent;
+        text-align: left;
+        color: #1f364b;
+        padding: .5rem .55rem;
+        margin: .08rem 0;
+      }
+      .mode-option:hover {
+        border-color: #c9dced;
+        background: #f2f8fd;
+      }
+      .mode-option.active {
+        border-color: #98c0de;
+        background: #e8f3fc;
+      }
+      .mode-option .line1 {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+      }
+      .mode-option .line2 {
+        color: var(--muted);
+        font-size: .82rem;
+        margin-top: .1rem;
+      }
+      .mode-check {
+        color: #1f845a;
+        font-size: .85rem;
+      }
       .btn-primary { background: var(--accent); color: #fff; }
       .btn-primary:hover { background: var(--accent2); }
       .btn-ghost { background: #f3f6fa; color: #24384f; border: 1px solid var(--border); }
@@ -186,6 +257,12 @@
         background: #f8fbff;
         padding: .7rem;
       }
+      .chat-answer h1, .chat-answer h2, .chat-answer h3, .chat-answer h4 {
+        margin: .55rem 0 .35rem;
+      }
+      .chat-answer p { margin: .45rem 0; line-height: 1.5; }
+      .chat-answer ul { margin: .25rem 0 .5rem 1.1rem; }
+      .chat-answer li { margin: .2rem 0; }
       .chat-log {
         border: 1px solid var(--border);
         border-radius: 10px;
@@ -261,22 +338,31 @@
       <section class="card">
         <article id="view-chat" class="view active">
           <h2 class="section-title">Default Chat</h2>
-          <p class="muted">Ask a coaching question anytime. Enable deep-think when needed.</p>
+          <p class="muted">Ask a coaching question anytime. Mode controls response depth: Quick is faster, Deep is more thorough.</p>
           <div class="field"><label for="chat-question">Question</label><textarea id="chat-question" placeholder="How can I improve energy this week?"></textarea></div>
-          <div class="row">
+          <div class="chat-toolbar">
             <div class="field">
-              <label for="chat-mode">Mode</label>
-              <select id="chat-mode">
-                <option value="quick">quick</option>
-                <option value="deep">deep</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="chat-deep-think">Deep Thinker</label>
-              <select id="chat-deep-think">
-                <option value="false">off</option>
-                <option value="true">on for this question</option>
-              </select>
+              <label>Mode</label>
+              <div class="mode-wrap">
+                <button class="mode-button" id="chat-mode-button" aria-haspopup="true" aria-expanded="false" type="button">
+                  <span id="chat-mode-label">Auto</span>
+                  <span class="caret">v</span>
+                </button>
+                <div class="mode-panel" id="chat-mode-panel" hidden>
+                  <button class="mode-option active" type="button" data-mode="auto">
+                    <span class="line1">Auto <span class="mode-check">✓</span></span>
+                    <span class="line2">Chooses Quick or Deep from question complexity.</span>
+                  </button>
+                  <button class="mode-option" type="button" data-mode="quick">
+                    <span class="line1">Quick <span class="mode-check" hidden>✓</span></span>
+                    <span class="line2">Faster response with concise analysis.</span>
+                  </button>
+                  <button class="mode-option" type="button" data-mode="deep">
+                    <span class="line1">Deep <span class="mode-check" hidden>✓</span></span>
+                    <span class="line2">Uses Deep Thinker for broader reasoning.</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="row">
@@ -314,11 +400,12 @@
         <article id="view-settings" class="view">
           <h2 class="section-title">Settings</h2>
           <p class="muted">Update AI settings or change password from this menu at any time.</p>
+          <p class="hint">Model pricing shown here uses provider list rates (OpenAI API Pricing and Gemini API Pricing), last synced on February 15, 2026.</p>
           <div class="grid-2">
             <div>
               <h3 class="section-title">AI Settings</h3>
               <div class="field"><label for="provider">Provider</label><select id="provider"><option value="">Select provider</option><option value="openai">OpenAI (ChatGPT)</option><option value="gemini">Gemini</option></select></div>
-              <div class="field"><label for="api-key">API Key</label><input id="api-key" type="password" placeholder="Required for update" /></div>
+              <div class="field"><label for="api-key">API Key</label><input id="api-key" type="password" placeholder="Required for first-time setup" /><div class="hint" id="api-key-mask"></div></div>
               <div class="field"><label for="deep-model">Deep Thinker Model</label><select id="deep-model"><option value="">Select model</option></select></div>
               <div class="field"><label for="reason-model">Reasoning Model</label><select id="reason-model"><option value="">Select model</option></select></div>
               <div class="field"><label for="utility-model">Utility Model</label><select id="utility-model"><option value="">Select model</option></select></div>
@@ -340,7 +427,7 @@
           <p class="muted">Token usage is tracked per user/provider/model for visibility and cost control.</p>
           <button class="btn-ghost" id="usage-refresh">Refresh</button>
           <table class="table" id="usage-table">
-            <thead><tr><th>Provider</th><th>Model</th><th>Requests</th><th>Prompt</th><th>Completion</th><th>Total</th></tr></thead>
+            <thead><tr><th>Provider</th><th>Model</th><th>Requests</th><th>Prompt</th><th>Completion</th><th>Total</th><th>Rough Cost (USD)</th></tr></thead>
             <tbody></tbody>
           </table>
           <div class="hint" id="usage-hint"></div>
@@ -356,6 +443,12 @@
       const views = ["chat", "intake", "settings", "usage"];
       const intakeState = { sessionId: null, readyToComplete: false };
       const intakeChat = [];
+      const CHAT_MODE_PRESETS = {
+        auto: { label: "Auto", mode: "quick", deepThink: false },
+        quick: { label: "Quick", mode: "quick", deepThink: false },
+        deep: { label: "Deep", mode: "deep", deepThink: true }
+      };
+      let selectedChatMode = "auto";
 
       function authHeaders() {
         return { "Authorization": "Bearer " + token, "Content-Type": "application/json" };
@@ -365,6 +458,65 @@
         const node = el(id);
         node.textContent = text || "";
         node.className = "notice" + (kind ? " " + kind : "");
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderSimpleMarkdown(markdownText) {
+        const src = String(markdownText || "").replace(/\r\n/g, "\n");
+        const lines = src.split("\n");
+        let html = "";
+        let inList = false;
+        for (const rawLine of lines) {
+          const line = rawLine.trimEnd();
+          if (!line.trim()) {
+            if (inList) {
+              html += "</ul>";
+              inList = false;
+            }
+            continue;
+          }
+          const hMatch = line.match(/^(#{1,4})\s+(.*)$/);
+          if (hMatch) {
+            if (inList) {
+              html += "</ul>";
+              inList = false;
+            }
+            const level = Math.min(4, hMatch[1].length);
+            let content = escapeHtml(hMatch[2]);
+            content = content.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+            html += "<h" + level + ">" + content + "</h" + level + ">";
+            continue;
+          }
+          const liMatch = line.match(/^[-*]\s+(.*)$/);
+          if (liMatch) {
+            if (!inList) {
+              html += "<ul>";
+              inList = true;
+            }
+            let item = escapeHtml(liMatch[1]);
+            item = item.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+            html += "<li>" + item + "</li>";
+            continue;
+          }
+          if (inList) {
+            html += "</ul>";
+            inList = false;
+          }
+          let paragraph = escapeHtml(line);
+          paragraph = paragraph.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+          paragraph = paragraph.replace(/`([^`]+?)`/g, "<code>$1</code>");
+          html += "<p>" + paragraph + "</p>";
+        }
+        if (inList) html += "</ul>";
+        return html || "<p>No answer content.</p>";
       }
 
       function addIntakeChatMessage(role, text) {
@@ -402,6 +554,39 @@
         } else {
           openDrawer();
         }
+      }
+
+      function openModePanel() {
+        el("chat-mode-panel").hidden = false;
+        el("chat-mode-button").setAttribute("aria-expanded", "true");
+      }
+
+      function closeModePanel() {
+        el("chat-mode-panel").hidden = true;
+        el("chat-mode-button").setAttribute("aria-expanded", "false");
+      }
+
+      function toggleModePanel() {
+        if (el("chat-mode-panel").hidden) openModePanel();
+        else closeModePanel();
+      }
+
+      function applyModeSelection(modeKey) {
+        selectedChatMode = CHAT_MODE_PRESETS[modeKey] ? modeKey : "auto";
+        el("chat-mode-label").textContent = CHAT_MODE_PRESETS[selectedChatMode].label;
+        document.querySelectorAll(".mode-option").forEach((node) => {
+          const active = node.getAttribute("data-mode") === selectedChatMode;
+          node.classList.toggle("active", active);
+          const check = node.querySelector(".mode-check");
+          if (check) check.hidden = !active;
+        });
+        closeModePanel();
+      }
+
+      function resolveChatMode(question) {
+        if (selectedChatMode !== "auto") return CHAT_MODE_PRESETS[selectedChatMode];
+        // Cost guardrail: default auto mode always runs quick path.
+        return CHAT_MODE_PRESETS.quick;
       }
 
       async function loadSession() {
@@ -461,6 +646,8 @@
       async function loadAiConfig() {
         const res = await fetch("/auth/ai-config", { headers: { "Authorization": "Bearer " + token } });
         if (!res.ok) {
+          el("api-key").placeholder = "Required for first-time setup";
+          el("api-key-mask").textContent = "";
           setNotice("ai-notice", "AI config not set yet.", "warn");
           return;
         }
@@ -469,7 +656,12 @@
         renderModels("deep-model", [], body.ai_deep_thinker_model);
         renderModels("reason-model", [], body.ai_reasoning_model);
         renderModels("utility-model", [], body.ai_utility_model);
-        setNotice("ai-notice", "Loaded current AI config. Enter API key to re-validate/select models.", "warn");
+        el("api-key").value = "";
+        el("api-key").placeholder = "Leave blank to keep existing key";
+        el("api-key-mask").textContent = body.api_key_masked
+          ? ("Saved key: " + body.api_key_masked)
+          : "";
+        setNotice("ai-notice", "Loaded current AI config. Enter a new API key only if you want to replace it.", "warn");
       }
 
       async function saveAiConfig() {
@@ -480,8 +672,8 @@
           ai_utility_model: el("utility-model").value,
           ai_api_key: el("api-key").value.trim()
         };
-        if (!payload.ai_provider || !payload.ai_deep_thinker_model || !payload.ai_reasoning_model || !payload.ai_utility_model || !payload.ai_api_key) {
-          setNotice("ai-notice", "Provider, key, and all three model slots are required.", "error");
+        if (!payload.ai_provider || !payload.ai_deep_thinker_model || !payload.ai_reasoning_model || !payload.ai_utility_model) {
+          setNotice("ai-notice", "Provider and all three model slots are required.", "error");
           return;
         }
         const res = await fetch("/auth/ai-config", {
@@ -493,7 +685,11 @@
           setNotice("ai-notice", "Could not save AI settings.", "error");
           return;
         }
+        const body = await res.json().catch(() => ({}));
         el("api-key").value = "";
+        if (body.api_key_masked) {
+          el("api-key-mask").textContent = "Saved key: " + body.api_key_masked;
+        }
         setNotice("ai-notice", "AI settings updated.", "ok");
       }
 
@@ -603,16 +799,28 @@
           setNotice("chat-notice", "Enter a question first.", "error");
           return;
         }
-        setNotice("chat-notice", "Generating response...", "");
+        const resolved = resolveChatMode(question);
+        const stageMessages = [
+          "Reviewing your goals and recent context...",
+          "Running specialist coaching agents...",
+          "Synthesizing a final coaching response..."
+        ];
+        let stageIdx = 0;
+        setNotice("chat-notice", stageMessages[stageIdx], "");
+        const noticeTimer = setInterval(() => {
+          stageIdx = (stageIdx + 1) % stageMessages.length;
+          setNotice("chat-notice", stageMessages[stageIdx], "");
+        }, 1300);
         const res = await fetch("/coach/question", {
           method: "POST",
           headers: authHeaders(),
           body: JSON.stringify({
             question,
-            mode: el("chat-mode").value,
-            deep_think: el("chat-deep-think").value === "true"
+            mode: resolved.mode,
+            deep_think: resolved.deepThink
           })
         });
+        clearInterval(noticeTimer);
         if (!res.ok) {
           setNotice("chat-notice", "Chat request failed.", "error");
           return;
@@ -620,9 +828,24 @@
         const body = await res.json();
         const out = el("chat-answer");
         out.style.display = "block";
-        out.innerHTML = "<strong>Answer</strong><p>" + body.answer + "</p>"
-          + "<strong>Suggested Questions</strong><ul>" + (body.suggested_questions || []).map((q) => "<li>" + q + "</li>").join("") + "</ul>";
-        setNotice("chat-notice", "Response ready.", "ok");
+        out.innerHTML = "<h3>Answer</h3>" + renderSimpleMarkdown(body.answer || "")
+          + "<strong>Coach Follow-up Questions (Please answer next)</strong><ul>" + (body.suggested_questions || []).map((q) => "<li>" + q + "</li>").join("") + "</ul>"
+          + "<p><em>Reply with your answers in your next message so guidance can be tailored and recorded.</em></p>";
+        const flags = Array.isArray(body.safety_flags) ? body.safety_flags : [];
+        const llmFailure = flags.some((f) => String(f).startsWith("llm_"));
+        if (llmFailure) {
+          if (flags.includes("llm_rate_limited")) {
+            setNotice("chat-notice", "AI provider rate limit/quota reached. Returned practical fallback guidance.", "warn");
+          } else if (flags.includes("llm_unavailable") || flags.includes("llm_provider_error")) {
+            setNotice("chat-notice", "AI service timed out or is temporarily unavailable. Returned practical fallback guidance.", "warn");
+          } else if (flags.includes("llm_auth_error") || flags.includes("llm_model_not_found")) {
+            setNotice("chat-notice", "AI configuration issue detected. Check Settings and model selection.", "error");
+          } else {
+            setNotice("chat-notice", "AI provider/model error. Check Settings (provider, key, and model selections).", "error");
+          }
+        } else {
+          setNotice("chat-notice", "Response ready (" + resolved.label + " mode).", "ok");
+        }
       }
 
       async function changePassword() {
@@ -665,10 +888,14 @@
         }
         items.forEach((item) => {
           const tr = document.createElement("tr");
-          tr.innerHTML = "<td>" + item.provider + "</td><td>" + item.model + "</td><td>" + item.request_count + "</td><td>" + item.prompt_tokens + "</td><td>" + item.completion_tokens + "</td><td>" + item.total_tokens + "</td>";
+          let roughCost = "n/a";
+          if (typeof item.rough_cost_usd === "number" && Number.isFinite(item.rough_cost_usd)) {
+            roughCost = "$" + Number(item.rough_cost_usd).toFixed(4);
+          }
+          tr.innerHTML = "<td>" + item.provider + "</td><td>" + item.model + "</td><td>" + item.request_count + "</td><td>" + item.prompt_tokens + "</td><td>" + item.completion_tokens + "</td><td>" + item.total_tokens + "</td><td>" + roughCost + "</td>";
           tbody.appendChild(tr);
         });
-        el("usage-hint").textContent = "Rows are aggregated by provider/model for your account.";
+        el("usage-hint").textContent = "Rows are aggregated by provider/model for your account. Rough cost is estimated from known per-1M token pricing.";
       }
 
       el("menu-chat").addEventListener("click", () => showView("chat"));
@@ -678,6 +905,18 @@
       el("logout").addEventListener("click", () => { sessionStorage.removeItem("access_token"); window.location.href = "/onboarding"; });
       el("chat-send").addEventListener("click", sendChat);
       el("chat-clear").addEventListener("click", () => { el("chat-question").value = ""; setNotice("chat-notice", "", ""); });
+      el("chat-mode-button").addEventListener("click", (event) => {
+        event.preventDefault();
+        toggleModePanel();
+      });
+      document.querySelectorAll(".mode-option").forEach((node) => {
+        node.addEventListener("click", () => applyModeSelection(node.getAttribute("data-mode") || "auto"));
+      });
+      document.addEventListener("click", (event) => {
+        const wrap = document.querySelector(".mode-wrap");
+        if (!wrap || wrap.contains(event.target)) return;
+        closeModePanel();
+      });
       el("intake-start").addEventListener("click", startIntakeConversation);
       el("intake-answer-send").addEventListener("click", sendIntakeAnswer);
       el("intake-complete").addEventListener("click", finalizeIntakeConversation);
@@ -694,6 +933,7 @@
 
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
+          closeModePanel();
           closeDrawer();
           return;
         }
@@ -714,6 +954,7 @@
       });
 
       async function init() {
+        applyModeSelection("auto");
         await loadSession();
         await loadIntakeStatus();
         await loadAiConfig();

@@ -36,7 +36,7 @@ class AIConfigInput(BaseModel):
     ai_reasoning_model: Optional[str] = Field(default=None, min_length=1, max_length=128)
     ai_deep_thinker_model: Optional[str] = Field(default=None, min_length=1, max_length=128)
     ai_utility_model: Optional[str] = Field(default=None, min_length=1, max_length=128)
-    ai_api_key: str = Field(min_length=8, max_length=512)
+    ai_api_key: Optional[str] = Field(default=None, max_length=512)
 
     @model_validator(mode="after")
     def validate_models(self):
@@ -90,11 +90,23 @@ class ModelUsageEntry(BaseModel):
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
+    rough_cost_usd: Optional[float] = None
     last_used_at: str
 
 
 class ModelUsageResponse(BaseModel):
     items: list[ModelUsageEntry]
+
+
+def _estimate_usage_cost_usd(provider: str, model: str, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
+    price = MODEL_PRICING_USD_PER_1M.get(provider, {}).get(model)
+    if not price:
+        return None
+    input_cost_per_1m, output_cost_per_1m = price
+    estimated = (prompt_tokens / 1_000_000.0) * input_cost_per_1m + (
+        completion_tokens / 1_000_000.0
+    ) * output_cost_per_1m
+    return round(estimated, 6)
 
 
 class ModelOptionsRequest(BaseModel):
@@ -128,36 +140,44 @@ def _bad_credentials() -> HTTPException:
 
 
 MODEL_DEFAULTS: dict[str, list[str]] = {
-    "openai": ["gpt-4.1", "gpt-4.1-mini", "gpt-4o-mini"],
-    "gemini": ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+    "openai": ["gpt-5.2", "gpt-5-mini", "gpt-5-nano", "gpt-4.1-mini"],
+    "gemini": ["gemini-2.5-pro", "gemini-2.5-flash-preview-09-2025", "gemini-2.0-flash"],
 }
 
 MODEL_PRICING_USD_PER_1M: dict[str, dict[str, tuple[float, float]]] = {
-    # Estimated values. Keep this table maintainable and refreshable over time.
+    # Standard-tier rates from provider pricing pages (USD per 1M tokens).
+    # Gemini 2.5 Pro input cost is tiered; this uses the <= 200k token prompt tier.
     "openai": {
-        "gpt-4.1": (2.0, 8.0),
+        "gpt-5.2": (1.75, 14.0),
+        "gpt-5-mini": (0.25, 2.0),
+        "gpt-5-nano": (0.05, 0.4),
         "gpt-4.1-mini": (0.4, 1.6),
-        "gpt-4o-mini": (0.15, 0.6),
     },
     "gemini": {
+        "gemini-2.5-pro": (1.25, 10.0),
+        "gemini-2.5-flash-preview-09-2025": (0.3, 2.5),
         "gemini-2.0-flash": (0.1, 0.4),
-        "gemini-1.5-flash": (0.075, 0.3),
-        "gemini-1.5-pro": (1.25, 5.0),
     },
 }
 
 
 def _upsert_ai_config(db: Session, user_id: int, ai: AIConfigInput) -> UserAIConfig:
     existing = db.query(UserAIConfig).filter(UserAIConfig.user_id == user_id).first()
-    encrypted = encrypt_api_key(ai.ai_api_key)
+    raw_key = (ai.ai_api_key or "").strip()
+    key_is_masked = "*" in raw_key
+    encrypted = encrypt_api_key(raw_key) if raw_key and not key_is_masked else None
     if existing:
         existing.ai_provider = ai.ai_provider.value
         existing.ai_model = (ai.ai_reasoning_model or ai.ai_model or "").strip()
         existing.ai_reasoning_model = (ai.ai_reasoning_model or ai.ai_model or "").strip()
         existing.ai_deep_thinker_model = (ai.ai_deep_thinker_model or ai.ai_model or "").strip()
         existing.ai_utility_model = (ai.ai_utility_model or ai.ai_model or "").strip()
-        existing.encrypted_api_key = encrypted
+        if encrypted:
+            existing.encrypted_api_key = encrypted
         return existing
+
+    if not encrypted:
+        raise HTTPException(status_code=400, detail="API key is required for first-time AI configuration")
 
     created = UserAIConfig(
         user_id=user_id,
@@ -173,7 +193,10 @@ def _upsert_ai_config(db: Session, user_id: int, ai: AIConfigInput) -> UserAICon
 
 
 def _best_model(provider: str, models: list[str]) -> str:
-    preferred = MODEL_DEFAULTS.get(provider, [])
+    preferred = {
+        "openai": ["gpt-5-mini", "gpt-5.2", "gpt-5-nano", "gpt-4.1-mini"],
+        "gemini": MODEL_DEFAULTS.get("gemini", []),
+    }.get(provider, MODEL_DEFAULTS.get(provider, []))
     for candidate in preferred:
         if candidate in models:
             return candidate
@@ -184,8 +207,8 @@ def _best_model(provider: str, models: list[str]) -> str:
 
 def _best_utility_model(provider: str, models: list[str]) -> str:
     utility_candidates = {
-        "openai": ["gpt-4.1-mini", "gpt-4o-mini", "gpt-4.1"],
-        "gemini": ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"],
+        "openai": ["gpt-5-nano", "gpt-5-mini", "gpt-5.2", "gpt-4.1-mini"],
+        "gemini": ["gemini-2.5-flash-preview-09-2025", "gemini-2.0-flash", "gemini-2.5-pro"],
     }
     preferred = utility_candidates.get(provider, [])
     for candidate in preferred:
@@ -196,8 +219,8 @@ def _best_utility_model(provider: str, models: list[str]) -> str:
 
 def _best_deep_thinker_model(provider: str, models: list[str]) -> str:
     deep_candidates = {
-        "openai": ["gpt-4.1", "gpt-4.1-mini", "gpt-4o-mini"],
-        "gemini": ["gemini-1.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"],
+        "openai": ["gpt-5.2", "gpt-5-mini", "gpt-4.1-mini", "gpt-5-nano"],
+        "gemini": ["gemini-2.5-pro", "gemini-2.5-flash-preview-09-2025", "gemini-2.0-flash"],
     }
     preferred = deep_candidates.get(provider, [])
     for candidate in preferred:
@@ -235,7 +258,8 @@ def _fetch_openai_models(api_key: str) -> list[str]:
     names: list[str] = []
     for item in data.get("data", []):
         model_id = str(item.get("id", "")).strip()
-        if model_id.startswith("gpt-"):
+        # Exclude codex-specialized models from health runtime configuration.
+        if model_id.startswith("gpt-") and "codex" not in model_id:
             names.append(model_id)
     return sorted(set(names))
 
@@ -294,6 +318,8 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)) -> TokenRespon
     db.flush()
 
     if payload.ai_config:
+        if not (payload.ai_config.ai_api_key or "").strip():
+            raise HTTPException(status_code=400, detail="API key is required when configuring AI during signup")
         _upsert_ai_config(db, user.id, payload.ai_config)
 
     db.commit()
@@ -329,13 +355,17 @@ def set_ai_config(
 ) -> AIConfigResponse:
     cfg = _upsert_ai_config(db, user.id, payload)
     db.commit()
+    try:
+        masked = mask_api_key(decrypt_api_key(cfg.encrypted_api_key))
+    except Exception:
+        masked = "configured"
     return AIConfigResponse(
         ai_provider=AIProvider(cfg.ai_provider),
         ai_model=cfg.ai_model,
         ai_reasoning_model=cfg.ai_reasoning_model or cfg.ai_model,
         ai_deep_thinker_model=cfg.ai_deep_thinker_model or cfg.ai_reasoning_model or cfg.ai_model,
         ai_utility_model=cfg.ai_utility_model or cfg.ai_model,
-        api_key_masked=mask_api_key(payload.ai_api_key),
+        api_key_masked=masked,
     )
 
 
@@ -406,8 +436,10 @@ def get_ai_config(
     # Do not return full key.
     masked = "configured"
     if cfg.encrypted_api_key:
-        # Mask format is intentionally generic on reads.
-        masked = "****...****"
+        try:
+            masked = mask_api_key(decrypt_api_key(cfg.encrypted_api_key))
+        except Exception:
+            masked = "configured"
 
     return AIConfigResponse(
         ai_provider=AIProvider(cfg.ai_provider),
@@ -460,6 +492,12 @@ def model_usage(
                 prompt_tokens=row.prompt_tokens,
                 completion_tokens=row.completion_tokens,
                 total_tokens=row.total_tokens,
+                rough_cost_usd=_estimate_usage_cost_usd(
+                    provider=row.provider,
+                    model=row.model,
+                    prompt_tokens=row.prompt_tokens,
+                    completion_tokens=row.completion_tokens,
+                ),
                 last_used_at=row.last_used_at.isoformat(),
             )
             for row in rows
