@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
 
 Base = declarative_base()
@@ -32,6 +32,9 @@ class User(Base):
     )
     conversation_summaries: Mapped[list["ConversationSummary"]] = relationship(
         "ConversationSummary", back_populates="user", cascade="all, delete-orphan"
+    )
+    daily_logs: Mapped[list["DailyLog"]] = relationship(
+        "DailyLog", back_populates="user", cascade="all, delete-orphan"
     )
 
 
@@ -184,3 +187,26 @@ class IntakeConversationSession(Base):
     coach_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class DailyLog(Base):
+    __tablename__ = "daily_logs"
+    __table_args__ = (
+        UniqueConstraint("user_id", "log_date", name="uq_daily_logs_user_date"),
+        Index("ix_daily_logs_user_date", "user_id", "log_date"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    log_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    sleep_hours: Mapped[float] = mapped_column(Float, nullable=False)
+    energy: Mapped[int] = mapped_column(Integer, nullable=False)
+    mood: Mapped[int] = mapped_column(Integer, nullable=False)
+    stress: Mapped[int] = mapped_column(Integer, nullable=False)
+    training_done: Mapped[bool] = mapped_column(nullable=False, default=False)
+    nutrition_on_plan: Mapped[bool] = mapped_column(nullable=False, default=False)
+    notes: Mapped[Optional[str]] = mapped_column(String(1200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user: Mapped[User] = relationship("User", back_populates="daily_logs")

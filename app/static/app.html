@@ -329,6 +329,7 @@
         </div>
         <div class="drawer-nav">
           <button id="menu-chat" class="nav-item active"><span>Chat</span></button>
+          <button id="menu-summary" class="nav-item"><span>Overall Summary</span></button>
           <button id="menu-intake" class="nav-item"><span>Intake</span><span id="intake-badge" class="status warn">pending</span></button>
           <button id="menu-settings" class="nav-item"><span>Settings</span></button>
           <button id="menu-usage" class="nav-item"><span>Model Usage</span></button>
@@ -369,6 +370,9 @@
             <button class="btn-primary" id="chat-send">Send</button>
             <button class="btn-ghost" id="chat-clear">Clear</button>
           </div>
+          <div class="row" style="margin-top:.45rem;">
+            <button class="btn-ghost" id="chat-daily-start">Start Daily Check-In With Coach</button>
+          </div>
           <div class="notice" id="chat-notice"></div>
           <div id="chat-answer" class="chat-answer" style="display:none;"></div>
         </article>
@@ -395,6 +399,21 @@
             <button class="btn-ghost" id="intake-complete" style="display:none;">Finalize Intake</button>
           </div>
           <div class="notice" id="intake-notice"></div>
+        </article>
+
+        <article id="view-summary" class="view">
+          <h2 class="section-title">Overall Summary</h2>
+          <p class="muted">Snapshot of today plus 7-day and 30-day trends from your daily logs.</p>
+          <div class="row">
+            <button class="btn-primary" id="summary-refresh">Refresh Summary</button>
+          </div>
+          <div class="chat-answer" id="summary-health" style="margin-top:.7rem;">No health score yet.</div>
+          <div class="grid-2" style="margin-top:.6rem;">
+            <div class="chat-answer" id="summary-today">No summary yet.</div>
+            <div class="chat-answer" id="summary-trends">No summary yet.</div>
+          </div>
+          <div class="chat-answer" id="summary-insights" style="margin-top:.7rem;">No summary yet.</div>
+          <div class="notice" id="summary-notice"></div>
         </article>
 
         <article id="view-settings" class="view">
@@ -440,9 +459,40 @@
       if (!token) window.location.href = "/onboarding";
 
       const el = (id) => document.getElementById(id);
-      const views = ["chat", "intake", "settings", "usage"];
+      const views = ["chat", "summary", "intake", "settings", "usage"];
       const intakeState = { sessionId: null, readyToComplete: false };
       const intakeChat = [];
+      const dailyCheckin = {
+        active: false,
+        index: 0,
+        logDate: null,
+        payload: {},
+        metricPayloads: [],
+        extras: {},
+        profile: { goalFocus: "general", primaryGoal: "", topGoals: [] },
+        steps: []
+      };
+      const DAILY_CORE_STEPS = [
+        { key: "sleep_hours", label: "Sleep Hours", question: "How many hours did you sleep last night?", type: "float", min: 0, max: 16 },
+        { key: "energy", label: "Energy", question: "On a 1-10 scale, what is your energy today?", type: "int", min: 1, max: 10 },
+        { key: "mood", label: "Mood", question: "On a 1-10 scale, what is your mood today?", type: "int", min: 1, max: 10 },
+        { key: "stress", label: "Stress", question: "On a 1-10 scale, what is your stress today?", type: "int", min: 1, max: 10 },
+        { key: "training_done", label: "Training Done", question: "Did you complete training today? (yes/no)", type: "bool" },
+        { key: "nutrition_on_plan", label: "Nutrition On Plan", question: "Was your nutrition on plan today? (yes/no)", type: "bool" }
+      ];
+      const DAILY_OPTIONAL_SIGNAL_STEP = {
+        key: "tracked_signals",
+        label: "Optional Signals",
+        question: "Which optional signals did you track today? (comma separated: weight, blood pressure, bed/wake times, last meal time, none)",
+        type: "signals"
+      };
+      const DAILY_OPTIONAL_STEPS = {
+        weight: { key: "weight_kg", label: "Weight", question: "What was your weight this morning? (kg or lbs)", type: "weight" },
+        bp: { key: "bp", label: "Blood Pressure", question: "What was your blood pressure reading? (e.g., 120/80)", type: "bp" },
+        sleep_timing: { key: "sleep_timing", label: "Sleep Timing", question: "What time did you go to bed and wake up? (e.g., 11:00pm, 6:30am)", type: "text" },
+        last_meal: { key: "last_meal", label: "Last Meal Time", question: "What time was your last meal?", type: "text" }
+      };
+      const DAILY_NOTES_STEP = { key: "notes", label: "Notes", question: "Any short note for today? (type 'skip' to skip)", type: "text" };
       const CHAT_MODE_PRESETS = {
         auto: { label: "Auto", mode: "quick", deepThink: false },
         quick: { label: "Quick", mode: "quick", deepThink: false },
@@ -587,6 +637,217 @@
         if (selectedChatMode !== "auto") return CHAT_MODE_PRESETS[selectedChatMode];
         // Cost guardrail: default auto mode always runs quick path.
         return CHAT_MODE_PRESETS.quick;
+      }
+
+      function currentDailyStep() {
+        return dailyCheckin.steps[dailyCheckin.index] || null;
+      }
+
+      function detectGoalFocus(primaryGoal, topGoals) {
+        const blob = (String(primaryGoal || "") + " " + String((topGoals || []).join(" "))).toLowerCase();
+        if (blob.includes("energy") || blob.includes("fatigue")) return "energy";
+        if (blob.includes("weight") || blob.includes("fat") || blob.includes("metabolic")) return "weight";
+        if (blob.includes("heart") || blob.includes("bp") || blob.includes("blood pressure") || blob.includes("cardio")) return "heart";
+        if (blob.includes("mental") || blob.includes("clarity") || blob.includes("focus")) return "clarity";
+        return "general";
+      }
+
+      function orderedCoreStepsByGoal(focus) {
+        const byKey = Object.fromEntries(DAILY_CORE_STEPS.map((s) => [s.key, s]));
+        if (focus === "energy" || focus === "clarity") {
+          return [byKey.sleep_hours, byKey.stress, byKey.energy, byKey.mood, byKey.training_done, byKey.nutrition_on_plan];
+        }
+        if (focus === "weight") {
+          return [byKey.nutrition_on_plan, byKey.training_done, byKey.sleep_hours, byKey.energy, byKey.stress, byKey.mood];
+        }
+        if (focus === "heart") {
+          return [byKey.stress, byKey.sleep_hours, byKey.training_done, byKey.nutrition_on_plan, byKey.energy, byKey.mood];
+        }
+        return DAILY_CORE_STEPS.slice();
+      }
+
+      async function loadDailyCheckinProfile() {
+        try {
+          const res = await fetch("/intake/baseline", { headers: { "Authorization": "Bearer " + token } });
+          if (!res.ok) return { goalFocus: "general", primaryGoal: "", topGoals: [] };
+          const body = await res.json();
+          const primaryGoal = String(body.primary_goal || "");
+          const topGoals = Array.isArray(body.top_goals) ? body.top_goals : [];
+          return {
+            goalFocus: detectGoalFocus(primaryGoal, topGoals),
+            primaryGoal,
+            topGoals
+          };
+        } catch (_) {
+          return { goalFocus: "general", primaryGoal: "", topGoals: [] };
+        }
+      }
+
+      function renderDailyCheckinPrompt(extraMessage) {
+        const out = el("chat-answer");
+        out.style.display = "block";
+        const step = currentDailyStep();
+        const hint = "Coach adapts this check-in to your goals and the signals you track.";
+        if (!step) {
+          out.innerHTML = "<h3>Daily Check-In</h3><p>Preparing check-in...</p>";
+          return;
+        }
+        out.innerHTML = "<h3>Daily Check-In Coach</h3>"
+          + "<p><strong>Step " + (dailyCheckin.index + 1) + " of " + dailyCheckin.steps.length + ":</strong> " + escapeHtml(step.label) + "</p>"
+          + "<p>" + escapeHtml(step.question) + "</p>"
+          + "<p><em>" + escapeHtml(hint) + "</em></p>"
+          + (extraMessage ? "<p>" + escapeHtml(extraMessage) + "</p>" : "");
+      }
+
+      function parseDailyCheckinValue(step, rawText) {
+        const text = String(rawText || "").trim();
+        if (!text) throw new Error("Please enter an answer.");
+        if (step.type === "float" || step.type === "int") {
+          const num = Number(text);
+          if (!Number.isFinite(num)) throw new Error("Please enter a number.");
+          if (num < step.min || num > step.max) {
+            throw new Error("Value out of range for " + step.label + ".");
+          }
+          return step.type === "int" ? Math.round(num) : num;
+        }
+        if (step.type === "bool") {
+          const normalized = text.toLowerCase();
+          if (["y", "yes", "true", "1"].includes(normalized)) return true;
+          if (["n", "no", "false", "0"].includes(normalized)) return false;
+          throw new Error("Please answer yes or no.");
+        }
+        if (step.type === "weight") {
+          const lower = text.toLowerCase();
+          const num = Number((lower.match(/-?\d+(\.\d+)?/) || [])[0]);
+          if (!Number.isFinite(num)) throw new Error("Please enter a valid weight.");
+          const kg = (lower.includes("lb") || lower.includes("lbs") || lower.includes("pound")) ? (num * 0.45359237) : num;
+          if (kg < 30 || kg > 350) throw new Error("Weight appears out of range.");
+          return Math.round(kg * 100) / 100;
+        }
+        if (step.type === "bp") {
+          const m = text.match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
+          if (!m) throw new Error("Please enter blood pressure like 120/80.");
+          const s = Number(m[1]);
+          const d = Number(m[2]);
+          if (s < 70 || s > 240 || d < 40 || d > 150) throw new Error("Blood pressure appears out of range.");
+          return { systolic: s, diastolic: d };
+        }
+        if (step.type === "signals") {
+          const normalized = text.toLowerCase();
+          if (normalized.includes("none")) return [];
+          const selected = [];
+          if (normalized.includes("weight")) selected.push("weight");
+          if (normalized.includes("blood pressure") || normalized.includes("bp")) selected.push("bp");
+          if (normalized.includes("bed") || normalized.includes("wake") || normalized.includes("sleep time")) selected.push("sleep_timing");
+          if (normalized.includes("last meal") || normalized.includes("ate") || normalized.includes("meal time")) selected.push("last_meal");
+          return selected;
+        }
+        if (step.type === "text") {
+          if (text.toLowerCase() === "skip") return null;
+          return text.slice(0, 1200);
+        }
+        return text;
+      }
+
+      async function startDailyCheckin() {
+        const profile = await loadDailyCheckinProfile();
+        dailyCheckin.active = true;
+        dailyCheckin.index = 0;
+        dailyCheckin.logDate = new Date().toISOString().slice(0, 10);
+        dailyCheckin.payload = {};
+        dailyCheckin.metricPayloads = [];
+        dailyCheckin.extras = {};
+        dailyCheckin.profile = profile;
+        dailyCheckin.steps = [...orderedCoreStepsByGoal(profile.goalFocus), DAILY_OPTIONAL_SIGNAL_STEP, DAILY_NOTES_STEP];
+        el("chat-question").value = "";
+        el("chat-question").focus();
+        const starter = profile.primaryGoal
+          ? ("Daily check-in started for your goal: " + profile.primaryGoal + ".")
+          : "Daily check-in started.";
+        renderDailyCheckinPrompt("Answer in the chat box and press Send.");
+        setNotice("chat-notice", starter, "ok");
+      }
+
+      async function submitDailyCheckin() {
+        const res = await fetch("/daily-log/" + dailyCheckin.logDate, {
+          method: "PUT",
+          headers: authHeaders(),
+          body: JSON.stringify(dailyCheckin.payload),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("chat-notice", body.detail || "Could not save daily check-in.", "error");
+          return;
+        }
+        for (const metric of dailyCheckin.metricPayloads) {
+          await fetch("/metrics", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify(metric)
+          });
+        }
+        dailyCheckin.active = false;
+        const out = el("chat-answer");
+        out.style.display = "block";
+        out.innerHTML = "<h3>Daily Check-In Saved</h3>"
+          + "<p>Your daily log for " + dailyCheckin.logDate + " is saved.</p>"
+          + "<p><em>Now ask any coaching question, and I will use this new daily signal.</em></p>";
+        setNotice("chat-notice", "Daily check-in complete.", "ok");
+      }
+
+      async function handleDailyCheckinTurn(userInput) {
+        const step = currentDailyStep();
+        if (!step) return;
+        let parsed;
+        try {
+          parsed = parseDailyCheckinValue(step, userInput);
+        } catch (err) {
+          setNotice("chat-notice", err.message || "Invalid answer.", "error");
+          renderDailyCheckinPrompt("Please try that step again.");
+          return;
+        }
+        if (step.key === "tracked_signals") {
+          const chosen = Array.isArray(parsed) ? parsed : [];
+          const optionalSteps = chosen
+            .map((key) => DAILY_OPTIONAL_STEPS[key])
+            .filter(Boolean);
+          const notesIndex = dailyCheckin.steps.findIndex((s) => s.key === "notes");
+          const insertionIndex = notesIndex >= 0 ? notesIndex : dailyCheckin.steps.length;
+          dailyCheckin.steps.splice(insertionIndex, 0, ...optionalSteps);
+        } else if (step.key === "weight_kg") {
+          dailyCheckin.metricPayloads.push({
+            metric_type: "weight_kg",
+            value: parsed
+          });
+          dailyCheckin.extras.weight_kg = parsed;
+        } else if (step.key === "bp") {
+          dailyCheckin.metricPayloads.push({ metric_type: "bp_systolic", value: parsed.systolic });
+          dailyCheckin.metricPayloads.push({ metric_type: "bp_diastolic", value: parsed.diastolic });
+          dailyCheckin.extras.bp = parsed.systolic + "/" + parsed.diastolic;
+        } else if (step.key === "sleep_timing") {
+          dailyCheckin.extras.sleep_timing = parsed;
+        } else if (step.key === "last_meal") {
+          dailyCheckin.extras.last_meal = parsed;
+        } else {
+          dailyCheckin.payload[step.key] = parsed;
+        }
+        dailyCheckin.index += 1;
+        el("chat-question").value = "";
+        if (dailyCheckin.index >= dailyCheckin.steps.length) {
+          const extraBits = [];
+          if (dailyCheckin.extras.weight_kg != null) extraBits.push("weight: " + dailyCheckin.extras.weight_kg + " kg");
+          if (dailyCheckin.extras.bp) extraBits.push("bp: " + dailyCheckin.extras.bp);
+          if (dailyCheckin.extras.sleep_timing) extraBits.push("sleep timing: " + dailyCheckin.extras.sleep_timing);
+          if (dailyCheckin.extras.last_meal) extraBits.push("last meal: " + dailyCheckin.extras.last_meal);
+          if (extraBits.length) {
+            const currentNotes = dailyCheckin.payload.notes ? String(dailyCheckin.payload.notes) + " | " : "";
+            dailyCheckin.payload.notes = (currentNotes + extraBits.join("; ")).slice(0, 1200);
+          }
+          await submitDailyCheckin();
+          return;
+        }
+        renderDailyCheckinPrompt();
+        setNotice("chat-notice", "Captured. Next check-in question loaded.", "");
       }
 
       async function loadSession() {
@@ -799,6 +1060,10 @@
           setNotice("chat-notice", "Enter a question first.", "error");
           return;
         }
+        if (dailyCheckin.active) {
+          await handleDailyCheckinTurn(question);
+          return;
+        }
         const resolved = resolveChatMode(question);
         const stageMessages = [
           "Reviewing your goals and recent context...",
@@ -826,6 +1091,7 @@
           return;
         }
         const body = await res.json();
+        el("chat-question").value = "";
         const out = el("chat-answer");
         out.style.display = "block";
         out.innerHTML = "<h3>Answer</h3>" + renderSimpleMarkdown(body.answer || "")
@@ -898,13 +1164,75 @@
         el("usage-hint").textContent = "Rows are aggregated by provider/model for your account. Rough cost is estimated from known per-1M token pricing.";
       }
 
+      function renderWindowSummary(window) {
+        if (!window || !window.entries) return "<p>No entries in this window yet.</p>";
+        return "<ul>"
+          + "<li><strong>Entries:</strong> " + window.entries + "</li>"
+          + "<li><strong>Avg Sleep:</strong> " + (window.avg_sleep_hours ?? "n/a") + "</li>"
+          + "<li><strong>Avg Energy:</strong> " + (window.avg_energy ?? "n/a") + "</li>"
+          + "<li><strong>Avg Mood:</strong> " + (window.avg_mood ?? "n/a") + "</li>"
+          + "<li><strong>Avg Stress:</strong> " + (window.avg_stress ?? "n/a") + "</li>"
+          + "<li><strong>Training Adherence:</strong> " + (window.training_adherence_pct ?? "n/a") + "%</li>"
+          + "<li><strong>Nutrition Adherence:</strong> " + (window.nutrition_adherence_pct ?? "n/a") + "%</li>"
+          + "</ul>";
+      }
+
+      async function loadOverallSummary() {
+        setNotice("summary-notice", "Loading summary...", "");
+        const res = await fetch("/summary/overall", { headers: { "Authorization": "Bearer " + token } });
+        if (!res.ok) {
+          setNotice("summary-notice", "Could not load summary.", "error");
+          return;
+        }
+        const body = await res.json();
+        const today = body.today || {};
+        const categoryScores = body.category_scores || {};
+        const wellnessReport = Array.isArray(body.wellness_report) ? body.wellness_report : [];
+        const weeklyInsights = Array.isArray(body.weekly_personalized_insights) ? body.weekly_personalized_insights : [];
+        const journey = body.personalized_journey || {};
+        const journeySignals = Array.isArray(journey.pattern_signals) ? journey.pattern_signals : [];
+        const journeyMeasures = Array.isArray(journey.prevention_measures) ? journey.prevention_measures : [];
+        el("summary-health").innerHTML = "<h3>Health Score</h3><p><strong>" + (body.health_score ?? "n/a") + "/100</strong></p>"
+          + "<p>Reflects Body Composition, Nutrition, Movement, Sleep, and Stress.</p>"
+          + "<h4>Category Scores</h4><ul>"
+          + Object.keys(categoryScores).map((k) => "<li><strong>" + escapeHtml(k) + ":</strong> " + categoryScores[k] + "/100</li>").join("")
+          + "</ul>";
+        el("summary-today").innerHTML = "<h3>Today</h3><ul>"
+          + "<li><strong>Date:</strong> " + (today.log_date || "n/a") + "</li>"
+          + "<li><strong>Sleep:</strong> " + (today.sleep_hours ?? "n/a") + "</li>"
+          + "<li><strong>Energy:</strong> " + (today.energy ?? "n/a") + "</li>"
+          + "<li><strong>Mood:</strong> " + (today.mood ?? "n/a") + "</li>"
+          + "<li><strong>Stress:</strong> " + (today.stress ?? "n/a") + "</li>"
+          + "<li><strong>Training:</strong> " + (today.training_done ? "yes" : "no") + "</li>"
+          + "<li><strong>Nutrition:</strong> " + (today.nutrition_on_plan ? "yes" : "no") + "</li>"
+          + "</ul>";
+        el("summary-trends").innerHTML = "<h3>7-Day Trend</h3>" + renderWindowSummary(body.trend_7d)
+          + "<h3>30-Day Trend</h3>" + renderWindowSummary(body.trend_30d);
+        el("summary-insights").innerHTML = "<h3>Wellness Report</h3><ul>"
+          + wellnessReport.map((row) => "<li><strong>" + escapeHtml(row.domain || "") + ":</strong> " + escapeHtml(String(row.status || "")) + " (" + (row.score ?? "n/a") + "/100)</li>").join("")
+          + "</ul><h3>Weekly Personalized Insights</h3><ul>"
+          + weeklyInsights.map((v) => "<li>" + escapeHtml(v) + "</li>").join("")
+          + "</ul><h3>Personalized Journey</h3><p>" + escapeHtml(String(journey.narrative || "")) + "</p><h4>Detected Patterns</h4><ul>"
+          + journeySignals.map((s) => "<li><strong>" + escapeHtml(String(s.pattern || "")) + ":</strong> " + escapeHtml(String(s.evidence || "")) + " -> " + escapeHtml(String(s.prevention_focus || "")) + "</li>").join("")
+          + "</ul><h4>Prevention Measures</h4><ul>"
+          + journeyMeasures.map((m) => "<li>" + escapeHtml(String(m || "")) + "</li>").join("")
+          + "</ul><h3>Top Wins</h3><ul>"
+          + (body.top_wins || []).map((v) => "<li>" + escapeHtml(v) + "</li>").join("")
+          + "</ul><h3>Top Risks</h3><ul>"
+          + (body.top_risks || []).map((v) => "<li>" + escapeHtml(v) + "</li>").join("")
+          + "</ul><h3>Next Best Action</h3><p>" + escapeHtml(body.next_best_action || "n/a") + "</p>";
+        setNotice("summary-notice", "Summary updated.", "ok");
+      }
+
       el("menu-chat").addEventListener("click", () => showView("chat"));
+      el("menu-summary").addEventListener("click", async () => { showView("summary"); await loadOverallSummary(); });
       el("menu-intake").addEventListener("click", () => showView("intake"));
       el("menu-settings").addEventListener("click", () => showView("settings"));
       el("menu-usage").addEventListener("click", async () => { showView("usage"); await loadUsage(); });
       el("logout").addEventListener("click", () => { sessionStorage.removeItem("access_token"); window.location.href = "/onboarding"; });
       el("chat-send").addEventListener("click", sendChat);
       el("chat-clear").addEventListener("click", () => { el("chat-question").value = ""; setNotice("chat-notice", "", ""); });
+      el("chat-daily-start").addEventListener("click", async () => { await startDailyCheckin(); });
       el("chat-mode-button").addEventListener("click", (event) => {
         event.preventDefault();
         toggleModePanel();
@@ -927,6 +1255,7 @@
       el("ai-save").addEventListener("click", saveAiConfig);
       el("password-save").addEventListener("click", changePassword);
       el("usage-refresh").addEventListener("click", loadUsage);
+      el("summary-refresh").addEventListener("click", loadOverallSummary);
       el("menu-toggle").addEventListener("click", toggleDrawer);
       el("menu-close").addEventListener("click", closeDrawer);
       el("menu-overlay").addEventListener("click", closeDrawer);

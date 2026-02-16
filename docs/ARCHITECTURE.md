@@ -107,6 +107,8 @@ Responsibilities:
 - Settings endpoints (AI config, password change)
 - Model usage stats endpoint
 - Intake coach orchestration endpoints
+- Daily log endpoints (upsert + list)
+- Overall summary endpoint (today/7d/30d deterministic aggregation)
 - Score calculation
 - Experiment lifecycle logic
 - LLM resilience logic (timeouts/retries/fallback path)
@@ -167,6 +169,7 @@ Core tables:
 - users
 - user_ai_configs
 - baselines
+- daily_logs
 - goals
 - metrics (time-series)
 - domain_scores

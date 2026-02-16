@@ -8,6 +8,8 @@ from app.api.coach import router as coach_router
 from app.api.dashboard import router as dashboard_router
 from app.api.intake import router as intake_router
 from app.api.metrics import router as metrics_router
+from app.api.daily_log import router as daily_log_router
+from app.api.summary import router as summary_router
 from app.db.session import create_tables
 
 app = FastAPI(title="The Longevity Alchemist")
@@ -50,3 +52,5 @@ app.include_router(intake_router)
 app.include_router(metrics_router)
 app.include_router(dashboard_router)
 app.include_router(coach_router)
+app.include_router(daily_log_router)
+app.include_router(summary_router)

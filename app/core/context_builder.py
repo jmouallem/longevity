@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
-from app.db.models import Baseline, CompositeScore, ConversationSummary, DomainScore, Metric
+from app.db.models import Baseline, CompositeScore, ConversationSummary, DailyLog, DomainScore, Metric
 
 CONTEXT_METRIC_TYPES = [
     "sleep_hours",
@@ -59,6 +59,12 @@ def build_coaching_context(db: Session, user_id: int) -> dict[str, Any]:
         .filter(ConversationSummary.user_id == user_id)
         .order_by(ConversationSummary.created_at.desc())
         .limit(5)
+        .all()
+    )
+    recent_daily_logs = (
+        db.query(DailyLog)
+        .filter(DailyLog.user_id == user_id, DailyLog.log_date >= since.date())
+        .order_by(DailyLog.log_date.desc())
         .all()
     )
 
@@ -129,11 +135,17 @@ def build_coaching_context(db: Session, user_id: int) -> dict[str, Any]:
         }
         for row in recent_summaries
     ]
+    latest_daily_log = recent_daily_logs[0] if recent_daily_logs else None
+    daily_log_summary = {
+        "entries_7d": len(recent_daily_logs),
+        "latest_log_date": (latest_daily_log.log_date.isoformat() if latest_daily_log else None),
+    }
 
     return {
         "baseline_present": baseline is not None,
         "baseline": baseline_summary,
         "metrics_7d_summary": metric_summary,
+        "daily_log_summary": daily_log_summary,
         "latest_scores": score_summary,
         "missing_data": missing_data,
         "recent_conversations": recent_conversations,

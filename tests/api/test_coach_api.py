@@ -59,6 +59,9 @@ def test_coach_ok_fixture_response(client, auth_token, override_llm) -> None:
     ]:
         assert key in body
     assert len(body["suggested_questions"]) >= 3
+    assert any("daily" in q.lower() and "log" in q.lower() for q in body["suggested_questions"])
+    assert "daily log hint" in body["answer"].lower()
+    assert "energy and recovery" in body["answer"].lower()
 
 
 def test_coach_malformed_json_fixture_fallback(client, auth_token, override_llm) -> None:

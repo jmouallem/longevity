@@ -42,6 +42,13 @@ class CoachQuestionRequest(BaseModel):
     context_hint: Optional[str] = Field(default=None, max_length=120)
 
 
+class CoachVoiceRequest(BaseModel):
+    transcript: str = Field(min_length=2, max_length=2000)
+    mode: CoachMode = CoachMode.quick
+    deep_think: bool = False
+    context_hint: Optional[str] = Field(default=None, max_length=120)
+
+
 class RecommendedAction(BaseModel):
     title: str
     steps: list[str]
@@ -265,6 +272,70 @@ def _response_from_raw(raw: dict[str, Any], mode: str) -> CoachQuestionResponse:
         safety_flags=safety_flags,
         disclaimer=_disclaimer(),
     )
+
+
+def _daily_log_focus(context: dict[str, Any], question: str) -> tuple[str, list[str]]:
+    baseline = context.get("baseline") or {}
+    primary_goal = str(baseline.get("primary_goal") or "").strip()
+    top_goals = baseline.get("top_goals") if isinstance(baseline.get("top_goals"), list) else []
+    goal_blob = " ".join([primary_goal] + [str(g) for g in top_goals]).lower()
+    question_lower = (question or "").lower()
+
+    # Always keep core structured fields, but reorder emphasis by goal/interest.
+    fields = ["sleep hours", "energy", "mood", "stress", "training", "nutrition", "short note"]
+    focus = "consistency and trend quality"
+    if any(k in goal_blob for k in ["energy", "fatigue"]):
+        fields = ["sleep hours", "stress", "energy", "mood", "training", "nutrition", "short note"]
+        focus = "energy and recovery"
+    elif any(k in goal_blob for k in ["weight", "fat loss", "body comp", "metabolic"]):
+        fields = ["nutrition", "training", "sleep hours", "energy", "stress", "mood", "short note"]
+        focus = "body composition and metabolic consistency"
+    elif any(k in goal_blob for k in ["heart", "bp", "blood pressure", "cardio"]):
+        fields = ["stress", "sleep hours", "training", "nutrition", "energy", "mood", "short note"]
+        focus = "cardiometabolic stability"
+    elif any(k in goal_blob for k in ["mental", "clarity", "focus", "cognitive"]):
+        fields = ["sleep hours", "mood", "stress", "energy", "training", "nutrition", "short note"]
+        focus = "mental clarity and resilience"
+
+    if "supplement" in question_lower:
+        focus = f"{focus} and supplement response tracking"
+    goal_label = primary_goal or "your goal"
+    focus_line = f"For {goal_label}, prioritize logging for {focus}."
+    return focus_line, fields
+
+
+def _apply_daily_log_nudge(
+    response: CoachQuestionResponse, context: dict[str, Any], question: str
+) -> CoachQuestionResponse:
+    summary = context.get("daily_log_summary") or {}
+    entries_7d = int(summary.get("entries_7d", 0) or 0)
+    if entries_7d >= 4:
+        return response
+
+    focus_line, fields = _daily_log_focus(context, question)
+    field_text = ", ".join(fields[:-1]) + ", and " + fields[-1]
+    nudge = (
+        f"Daily logs will make your coaching sharper. {focus_line} "
+        f"Log: {field_text}."
+    )
+    if all(nudge not in item for item in response.rationale_bullets):
+        response.rationale_bullets = (response.rationale_bullets[:6] + [nudge])[:7]
+
+    follow_up = (
+        f"Can you log daily for the next 7 days for {focus_line.split('For ', 1)[-1].rstrip('.')} "
+        f"using: {field_text}?"
+    )
+    if all(follow_up != item for item in response.suggested_questions):
+        response.suggested_questions = (response.suggested_questions + [follow_up])[:8]
+
+    if "Daily logs will make your coaching sharper." not in response.answer:
+        response.answer = (
+            f"{response.answer}\n\n"
+            "### Daily Log Hint\n"
+            f"Daily logs will make your coaching sharper. {focus_line} "
+            f"Please track: {field_text}."
+        )
+    return response
 
 
 def _agent_profiles(include_supplement_audit: bool) -> list[dict[str, str]]:
@@ -573,6 +644,8 @@ def ask_coach_question(
         response.safety_flags = list({*response.safety_flags, "supplement_caution"})
         response.rationale_bullets = response.rationale_bullets[:6] + [supplement_caution_text()]
 
+    response = _apply_daily_log_nudge(response, context, payload.question)
+
     if llm_error:
         response.suggested_questions = response.suggested_questions[:8]
 
@@ -587,3 +660,20 @@ def ask_coach_question(
     )
     _cache_set(user.id, payload, response)
     return response
+
+
+@router.post("/voice", response_model=CoachQuestionResponse, status_code=status.HTTP_200_OK)
+def ask_coach_voice(
+    payload: CoachVoiceRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    llm_client: LLMClient = Depends(get_llm_client),
+) -> CoachQuestionResponse:
+    # Voice path is transcript-first for MVP: no audio persistence, same coaching pipeline.
+    text_payload = CoachQuestionRequest(
+        question=payload.transcript,
+        mode=payload.mode,
+        deep_think=payload.deep_think,
+        context_hint=payload.context_hint,
+    )
+    return ask_coach_question(payload=text_payload, user=user, db=db, llm_client=llm_client)

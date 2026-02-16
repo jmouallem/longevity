@@ -91,6 +91,9 @@ GET  /intake/status
 POST /intake/conversation/start
 POST /intake/conversation/answer
 POST /intake/conversation/complete
+PUT  /daily-log/{date}
+GET  /daily-log
+GET  /summary/overall
 POST /metrics
 GET  /dashboard/summary
 POST /integrations/apple-health/sync

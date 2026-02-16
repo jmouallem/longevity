@@ -48,7 +48,7 @@ This document maps `docs/USERNEEDS.md` requirements to implementation slices/pha
 | 13 Experiment & Adaptation | N-of-1 experiment lifecycle and adaptation | Roadmap Phase 3 | Planned | Explicitly out-of-scope in early slices. |
 | 14 Override & Consequence | User override with consequences/mitigation | Roadmap Phases 3-4 | Planned | Not in Slices 1-4. |
 | 15 Knowledge Updating | Research ingestion + confidence + acceptance | Roadmap Phase 7 | Planned | Explicitly out-of-scope in Slice 3. |
-| 16 Dashboard | Daily/weekly/monthly, scores, progress, experiment impact | Slice 2 + Roadmap Phase 6 | Partial | Slice 2 delivers summary API; richer UX/visualization later. |
+| 16 Dashboard | Daily/weekly/monthly, scores, progress, experiment impact | Slice 2 + Slice 8 + Roadmap Phase 6 | Partial | Slice 2 delivers score summary; Slice 8 adds deterministic overall summary and daily-log-driven snapshots. |
 | 17 System Boundaries | Not diagnosis, no over-promising, safety checks | Slice 3 + drift/safety docs | Partial | Emergency guardrails in Slice 3; broader policy enforcement should be tested continuously. |
 
 ## Checklist Mapping (`docs/USERNEEDS_CHECKLIST.md`)

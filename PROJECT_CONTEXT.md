@@ -288,6 +288,7 @@ Update this document when:
 - Slice 5: GUI onboarding + initialization gate (account + LLM config before intake)
 - Slice 6: workspace menu + optional/re-runnable intake + settings + model token usage stats
 - Slice 7: AI-led intake coach interview + concern-driven probing + structured baseline mapping
+- Slice 8: daily log + overall summary endpoint + initial mobile-app style workspace expansion
 
 
 
