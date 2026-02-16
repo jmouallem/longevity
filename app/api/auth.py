@@ -20,6 +20,8 @@ from app.core.security import (
 )
 from app.db.models import (
     Baseline,
+    ChatMessage,
+    ChatThread,
     CompositeScore,
     ConversationSummary,
     DailyLog,
@@ -27,6 +29,7 @@ from app.db.models import (
     IntakeConversationSession,
     Metric,
     ModelUsageStat,
+    UserReminderPreference,
     User,
     UserAIConfig,
 )
@@ -111,6 +114,18 @@ class ModelUsageResponse(BaseModel):
 
 class ResetResult(BaseModel):
     deleted_rows: int
+
+
+class ReminderSettingsRequest(BaseModel):
+    enabled: bool = False
+    interval_minutes: int = Field(default=120, ge=15, le=1440)
+
+
+class ReminderSettingsResponse(BaseModel):
+    enabled: bool
+    interval_minutes: int
+    reminder_title: str
+    reminder_body: str
 
 
 def _estimate_usage_cost_usd(provider: str, model: str, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
@@ -542,6 +557,8 @@ def reset_user_data(
     deleted_rows = 0
     for model in (
         IntakeConversationSession,
+        ChatMessage,
+        ChatThread,
         ConversationSummary,
         DailyLog,
         Metric,
@@ -557,3 +574,88 @@ def reset_user_data(
         deleted_rows += int(count or 0)
     db.commit()
     return ResetResult(deleted_rows=deleted_rows)
+
+
+@router.delete("/daily-data", response_model=ResetResult)
+def reset_daily_data(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ResetResult:
+    deleted_rows = 0
+    for model in (
+        DailyLog,
+        Metric,
+        DomainScore,
+        CompositeScore,
+        ConversationSummary,
+    ):
+        count = (
+            db.query(model)
+            .filter(model.user_id == user.id)
+            .delete(synchronize_session=False)
+        )
+        deleted_rows += int(count or 0)
+    db.commit()
+    return ResetResult(deleted_rows=deleted_rows)
+
+
+@router.get("/notification-settings", response_model=ReminderSettingsResponse)
+def get_notification_settings(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ReminderSettingsResponse:
+    pref = (
+        db.query(UserReminderPreference)
+        .filter(UserReminderPreference.user_id == user.id)
+        .first()
+    )
+    if not pref:
+        pref = UserReminderPreference(
+            user_id=user.id,
+            enabled=False,
+            interval_minutes=120,
+            reminder_title="Longevity Check-In",
+            reminder_body="Quick check-in: log your progress and keep momentum.",
+        )
+        db.add(pref)
+        db.commit()
+        db.refresh(pref)
+    return ReminderSettingsResponse(
+        enabled=bool(pref.enabled),
+        interval_minutes=int(pref.interval_minutes),
+        reminder_title=pref.reminder_title,
+        reminder_body=pref.reminder_body,
+    )
+
+
+@router.put("/notification-settings", response_model=ReminderSettingsResponse)
+def set_notification_settings(
+    payload: ReminderSettingsRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ReminderSettingsResponse:
+    pref = (
+        db.query(UserReminderPreference)
+        .filter(UserReminderPreference.user_id == user.id)
+        .first()
+    )
+    if not pref:
+        pref = UserReminderPreference(
+            user_id=user.id,
+            enabled=bool(payload.enabled),
+            interval_minutes=int(payload.interval_minutes),
+            reminder_title="Longevity Check-In",
+            reminder_body="Quick check-in: log your progress and keep momentum.",
+        )
+        db.add(pref)
+    else:
+        pref.enabled = bool(payload.enabled)
+        pref.interval_minutes = int(payload.interval_minutes)
+    db.commit()
+    db.refresh(pref)
+    return ReminderSettingsResponse(
+        enabled=bool(pref.enabled),
+        interval_minutes=int(pref.interval_minutes),
+        reminder_title=pref.reminder_title,
+        reminder_body=pref.reminder_body,
+    )

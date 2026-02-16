@@ -36,6 +36,12 @@ class User(Base):
     daily_logs: Mapped[list["DailyLog"]] = relationship(
         "DailyLog", back_populates="user", cascade="all, delete-orphan"
     )
+    chat_threads: Mapped[list["ChatThread"]] = relationship(
+        "ChatThread", back_populates="user", cascade="all, delete-orphan"
+    )
+    reminder_preference: Mapped[Optional["UserReminderPreference"]] = relationship(
+        "UserReminderPreference", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class Baseline(Base):
@@ -50,6 +56,10 @@ class Baseline(Base):
     goal_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     age_years: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     sex_at_birth: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    height_text: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    target_outcome: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    timeline: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    biggest_challenge: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     weight: Mapped[float] = mapped_column(Float, nullable=False)
     waist: Mapped[float] = mapped_column(Float, nullable=False)
@@ -68,9 +78,23 @@ class Baseline(Base):
     engagement_style: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     nutrition_patterns: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     training_history: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    training_experience: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    equipment_access: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    limitations: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    strength_benchmarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    bedtime: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    wake_time: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    energy_pattern: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    health_conditions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    physician_restrictions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     supplement_stack: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     lab_markers: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     fasting_practices: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    fasting_interest: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    fasting_style: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    fasting_experience: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    fasting_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    fasting_flexibility: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     recovery_practices: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     medication_details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
@@ -206,6 +230,7 @@ class DailyLog(Base):
     training_done: Mapped[bool] = mapped_column(nullable=False, default=False)
     nutrition_on_plan: Mapped[bool] = mapped_column(nullable=False, default=False)
     notes: Mapped[Optional[str]] = mapped_column(String(1200), nullable=True)
+    checkin_payload_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -227,3 +252,57 @@ class FeedbackEntry(Base):
     details: Mapped[str] = mapped_column(Text, nullable=False)
     page: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+
+class UserReminderPreference(Base):
+    __tablename__ = "user_reminder_preferences"
+    __table_args__ = (UniqueConstraint("user_id", name="uq_user_reminder_preferences_user_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    enabled: Mapped[bool] = mapped_column(nullable=False, default=False)
+    interval_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=120)
+    reminder_title: Mapped[str] = mapped_column(String(120), nullable=False, default="Longevity Check-In")
+    reminder_body: Mapped[str] = mapped_column(
+        String(240), nullable=False, default="Quick check-in: log your progress and keep momentum."
+    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user: Mapped[User] = relationship("User", back_populates="reminder_preference")
+
+
+class ChatThread(Base):
+    __tablename__ = "chat_threads"
+    __table_args__ = (
+        Index("ix_chat_threads_user_updated", "user_id", "updated_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_message_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    user: Mapped[User] = relationship("User", back_populates="chat_threads")
+    messages: Mapped[list["ChatMessage"]] = relationship(
+        "ChatMessage", back_populates="thread", cascade="all, delete-orphan"
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    __table_args__ = (
+        Index("ix_chat_messages_thread_created", "thread_id", "created_at"),
+        Index("ix_chat_messages_user_created", "user_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    thread_id: Mapped[int] = mapped_column(ForeignKey("chat_threads.id"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    mode: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    thread: Mapped[ChatThread] = relationship("ChatThread", back_populates="messages")

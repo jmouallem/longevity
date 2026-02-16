@@ -20,6 +20,10 @@ LLM_RETRY_BACKOFF_SECONDS = float(os.getenv("LLM_RETRY_BACKOFF_SECONDS", "0.75")
 LLM_MAX_TOKENS_UTILITY = int(os.getenv("LLM_MAX_TOKENS_UTILITY", "320"))
 LLM_MAX_TOKENS_REASONING = int(os.getenv("LLM_MAX_TOKENS_REASONING", "700"))
 LLM_MAX_TOKENS_DEEP = int(os.getenv("LLM_MAX_TOKENS_DEEP", "900"))
+DEFAULT_JSON_SYSTEM_PROMPT = (
+    "Return strict JSON with keys: answer, rationale_bullets, recommended_actions, "
+    "suggested_questions, safety_flags."
+)
 
 
 def _http_timeout() -> httpx.Timeout:
@@ -124,7 +128,7 @@ def select_model_for_task(
 
 
 def _openai_request_v1_chat(
-    model: str, api_key: str, prompt: str, max_output_tokens: int
+    model: str, api_key: str, prompt: str, max_output_tokens: int, system_instruction: str = DEFAULT_JSON_SYSTEM_PROMPT
 ) -> Tuple[str, dict[str, int]]:
     payload = {
         "model": model,
@@ -132,10 +136,7 @@ def _openai_request_v1_chat(
         "messages": [
             {
                 "role": "system",
-                "content": (
-                    "Return strict JSON with keys: answer, rationale_bullets, recommended_actions, "
-                    "suggested_questions, safety_flags."
-                ),
+                "content": system_instruction,
             },
             {"role": "user", "content": prompt},
         ],
@@ -165,7 +166,12 @@ def _openai_request_v1_chat(
 
 
 def _openai_request_v1_responses(
-    model: str, api_key: str, prompt: str, max_output_tokens: int
+    model: str,
+    api_key: str,
+    prompt: str,
+    max_output_tokens: int,
+    allow_web_search: bool = False,
+    system_instruction: str = DEFAULT_JSON_SYSTEM_PROMPT,
 ) -> Tuple[str, dict[str, int]]:
     payload = {
         "model": model,
@@ -175,10 +181,7 @@ def _openai_request_v1_responses(
                 "content": [
                     {
                         "type": "input_text",
-                        "text": (
-                            "Return strict JSON with keys: answer, rationale_bullets, recommended_actions, "
-                            "suggested_questions, safety_flags."
-                        ),
+                        "text": system_instruction,
                     }
                 ],
             },
@@ -192,6 +195,8 @@ def _openai_request_v1_responses(
     if model.startswith("gpt-5"):
         payload["reasoning"] = {"effort": "low"}
         payload["text"] = {"verbosity": "low"}
+    if allow_web_search:
+        payload["tools"] = [{"type": "web_search_preview"}]
     response = httpx.post(
         "https://api.openai.com/v1/responses",
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
@@ -243,7 +248,7 @@ def _extract_openai_output_text(data: dict[str, Any]) -> str:
 
 
 def _openai_request_v1_responses_with_image(
-    model: str, api_key: str, prompt: str, image_bytes: bytes, image_mime_type: str, max_output_tokens: int
+    model: str, api_key: str, prompt: str, image_bytes: bytes, image_mime_type: str, max_output_tokens: int, allow_web_search: bool = False
 ) -> Tuple[str, dict[str, int]]:
     image_b64 = base64.b64encode(image_bytes).decode("ascii")
     payload = {
@@ -274,6 +279,8 @@ def _openai_request_v1_responses_with_image(
     if model.startswith("gpt-5"):
         payload["reasoning"] = {"effort": "low"}
         payload["text"] = {"verbosity": "low"}
+    if allow_web_search:
+        payload["tools"] = [{"type": "web_search_preview"}]
     response = httpx.post(
         "https://api.openai.com/v1/responses",
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
@@ -298,31 +305,53 @@ def _openai_request_v1_responses_with_image(
 
 
 def _openai_request(
-    model: str, api_key: str, prompt: str, max_output_tokens: int
+    model: str,
+    api_key: str,
+    prompt: str,
+    max_output_tokens: int,
+    allow_web_search: bool = False,
+    system_instruction: str = DEFAULT_JSON_SYSTEM_PROMPT,
 ) -> Tuple[str, dict[str, int]]:
     attempts = max(1, LLM_RETRY_COUNT + 1)
     last_error = "unknown error"
-    prefer_responses = model.startswith("gpt-5")
+    prefer_responses = model.startswith("gpt-5") or allow_web_search
     for idx in range(attempts):
         try:
             if prefer_responses:
                 raw, usage_tokens = _openai_request_v1_responses(
-                    model, api_key, prompt, max_output_tokens
+                    model,
+                    api_key,
+                    prompt,
+                    max_output_tokens,
+                    allow_web_search=allow_web_search,
+                    system_instruction=system_instruction,
                 )
             else:
                 raw, usage_tokens = _openai_request_v1_chat(
-                    model, api_key, prompt, max_output_tokens
+                    model, api_key, prompt, max_output_tokens, system_instruction=system_instruction
                 )
                 if not raw.strip():
                     raw, usage_tokens = _openai_request_v1_responses(
-                        model, api_key, prompt, max_output_tokens
+                        model,
+                        api_key,
+                        prompt,
+                        max_output_tokens,
+                        allow_web_search=allow_web_search,
+                        system_instruction=system_instruction,
                     )
             return raw, usage_tokens
         except ValueError as exc:
             # Empty payload or output: retry once with a larger budget on responses endpoint.
             try:
                 boosted_tokens = min(max_output_tokens * 2, 1800)
-                return _openai_request_v1_responses(model, api_key, prompt, boosted_tokens)
+                return _openai_request_v1_responses(
+                    model,
+                    api_key,
+                    prompt,
+                    boosted_tokens,
+                    allow_web_search=allow_web_search,
+                    system_instruction=system_instruction,
+                )
             except Exception as fallback_exc:
                 last_error = str(fallback_exc)[:220]
                 if idx < attempts - 1:
@@ -351,7 +380,14 @@ def _openai_request(
             # Some newer model families may require the /v1/responses endpoint.
             if status in {400, 404}:
                 try:
-                    return _openai_request_v1_responses(model, api_key, prompt, max_output_tokens)
+                    return _openai_request_v1_responses(
+                        model,
+                        api_key,
+                        prompt,
+                        max_output_tokens,
+                        allow_web_search=allow_web_search,
+                        system_instruction=system_instruction,
+                    )
                 except Exception as fallback_exc:
                     last_error = str(fallback_exc)[:220]
             raise LLMRequestError(
@@ -506,7 +542,13 @@ def _record_usage(
 
 class LLMClient(Protocol):
     def generate_json(
-        self, db: Session, user_id: int, prompt: str, task_type: str = "reasoning"
+        self,
+        db: Session,
+        user_id: int,
+        prompt: str,
+        task_type: str = "reasoning",
+        allow_web_search: bool = False,
+        system_instruction: str = DEFAULT_JSON_SYSTEM_PROMPT,
     ) -> dict[str, Any]:
         ...
 
@@ -518,13 +560,20 @@ class LLMClient(Protocol):
         image_bytes: bytes,
         image_mime_type: str,
         task_type: str = "reasoning",
+        allow_web_search: bool = False,
     ) -> dict[str, Any]:
         ...
 
 
 class RealLLMClient:
     def generate_json(
-        self, db: Session, user_id: int, prompt: str, task_type: str = "reasoning"
+        self,
+        db: Session,
+        user_id: int,
+        prompt: str,
+        task_type: str = "reasoning",
+        allow_web_search: bool = False,
+        system_instruction: str = DEFAULT_JSON_SYSTEM_PROMPT,
     ) -> dict[str, Any]:
         provider, reasoning_model, deep_thinker_model, utility_model, api_key = _resolve_model_config(
             db, user_id
@@ -532,7 +581,14 @@ class RealLLMClient:
         model = select_model_for_task(reasoning_model, deep_thinker_model, utility_model, task_type)
         max_output_tokens = _max_output_tokens(task_type)
         if provider == "openai":
-            raw, usage_tokens = _openai_request(model, api_key, prompt, max_output_tokens)
+            raw, usage_tokens = _openai_request(
+                model,
+                api_key,
+                prompt,
+                max_output_tokens,
+                allow_web_search=allow_web_search,
+                system_instruction=system_instruction,
+            )
         elif provider == "gemini":
             raw, usage_tokens = _gemini_request(model, api_key, prompt, max_output_tokens)
         else:
@@ -560,6 +616,7 @@ class RealLLMClient:
         image_bytes: bytes,
         image_mime_type: str,
         task_type: str = "reasoning",
+        allow_web_search: bool = False,
     ) -> dict[str, Any]:
         provider, reasoning_model, deep_thinker_model, utility_model, api_key = _resolve_model_config(
             db, user_id
@@ -568,7 +625,13 @@ class RealLLMClient:
         max_output_tokens = _max_output_tokens(task_type)
         if provider == "openai":
             raw, usage_tokens = _openai_request_v1_responses_with_image(
-                model, api_key, prompt, image_bytes, image_mime_type, max_output_tokens
+                model,
+                api_key,
+                prompt,
+                image_bytes,
+                image_mime_type,
+                max_output_tokens,
+                allow_web_search=allow_web_search,
             )
         elif provider == "gemini":
             raw, usage_tokens = _gemini_request_with_image(

@@ -11,6 +11,7 @@ from app.api.metrics import router as metrics_router
 from app.api.daily_log import router as daily_log_router
 from app.api.summary import router as summary_router
 from app.api.feedback import router as feedback_router
+from app.api.chat_history import router as chat_router
 from app.db.session import create_tables
 
 app = FastAPI(title="The Longevity Alchemist")
@@ -56,3 +57,4 @@ app.include_router(coach_router)
 app.include_router(daily_log_router)
 app.include_router(summary_router)
 app.include_router(feedback_router)
+app.include_router(chat_router)

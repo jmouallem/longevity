@@ -155,7 +155,7 @@ scope creep, architecture mutation, unsafe behavior, and creeping complexity.
 - [ ] Workspace settings menu still supports AI config update and password change.
 - [ ] Workspace settings menu still supports user-data reinitialize and separate model-usage reset.
 - [ ] Workspace view switching still enforces one active view at a time.
-- [ ] Intake coach flow remains one-question-at-a-time, not multi-question dumps.
+- [ ] Intake coach flow remains compact-batch (6-10 prompts), not unbounded multi-question dumps.
 - [ ] Intake concern probing deepens only in flagged/prioritized domains.
 
 ---

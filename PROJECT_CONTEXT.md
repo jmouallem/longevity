@@ -33,16 +33,25 @@ Its purpose is to capture essential, relatively static project context to ensure
 - Per-user triple model profiles (deep thinker + reasoning + utility) with deterministic routing
 - Structured baseline data collection and storage
 - Main workspace UI with menu-based Chat/Intake/Settings/Usage views
+- Chat thread history (ChatGPT-style continuity) with per-user thread/message persistence
+- Agent/personality run-status feedback in chat while response is being generated
+- Specialist coaching stack with strategic/operational layering:
+  - Goal Strategist (6-24 week targets, phases, pivots)
+  - Orchestrator (daily/weekly execution and conflict resolution)
+  - Domain specialists (Nutritionist, Sleep Expert, Movement Coach, Cardiometabolic Strategist, Supplement Auditor, Safety Clinician)
+  - Optional contextual specialists (Behavior Architect, Recovery & Stress Regulator)
 - Shared feedback capture view (feature/idea/bug) with CSV export + clear-all actions
 - Settings actions to reinitialize user health/coaching data and reset model usage stats separately
+- Settings actions to clear daily operational data separately from intake baseline data
 - Skippable and re-runnable intake lifecycle from workspace menu
-- AI-led conversational intake coach agent for one-question-at-a-time baseline capture
+- AI-led conversational intake coach agent for compact-batch baseline capture (6-10 prompts per batch)
 - Future: conversational/multimodal intake mode (while retaining structured storage)
 - Adaptive intake with goal/risk/engagement-based questioning and tone
 - Future: modular external data connectors (Apple Health, Hume) with normalized sync into internal datasets
 - Time-series health metrics logging
 - Domain scoring and composite score tracking
 - AI-assisted coaching via a `/coach/question` endpoint
+- Utility-model parsing of free-form coaching updates into structured persistent memory
 - Token usage tracking per user/provider/model
 - Modular testing harness with mockable LLMs
 - Guided question suggestions
@@ -50,7 +59,6 @@ Its purpose is to capture essential, relatively static project context to ensure
 
 ### Out of Scope (MVP and Early Slices)
 
-- Multi-agent council orchestration
 - Meal image storage
 - Voice input or storage
 - Research ingestion and integration
@@ -98,6 +106,7 @@ The repository includes the following core documents:
   - reasoning model (default analysis/planning)
   - utility model (routing/summarization/classification/tasks)
 - Utility tasks should default to the utility model route
+- Free-form chat updates should be parsed through the utility model into structured log events for future retrieval
 - Deep-think submissions should route to the deep-thinker model
 - Model selectors should show cost metadata when available
 - External LLM APIs permitted for coaching

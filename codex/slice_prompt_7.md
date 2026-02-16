@@ -2,7 +2,7 @@
 
 ## Objective
 Implement intake as a coach-led conversation that:
-- asks one question at a time,
+- asks compact batches (6-10 prompts max per batch),
 - starts from user goals,
 - probes deeper where concern/risk signals appear,
 - maps answers into deterministic structured baseline fields.
@@ -23,9 +23,10 @@ Implement intake as a coach-led conversation that:
 - Advanced experiment planning.
 
 ## Acceptance Criteria
-- Intake runs as one-question conversational flow.
+- Intake runs as compact-batch conversational flow.
 - Goal-first prompt triggers domain prioritization.
 - Concern/risk signals trigger deeper clarifying questions.
 - Required structured baseline fields are deterministically populated.
 - User can pause/continue intake without losing structured progress.
+- Completion response includes structured profile/config/open-questions outputs.
 - Full transcript is not stored long-term.

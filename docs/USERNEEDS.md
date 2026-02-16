@@ -115,6 +115,23 @@ Requirements:
 - Support incremental sync and conflict-safe upserts
 - Provider failures must not break core app flows
 
+### 4.4 Conversational Continuity + Agent Transparency
+
+Users must be able to continue prior conversations and understand what specialist personalities are working on their request.
+
+Requirements:
+- Chat must support thread history per user (ChatGPT-like conversation continuity)
+- User can start a new thread or open prior threads at any time
+- Thread history must be user-isolated and server-persisted
+- During response generation, UI should show active specialist personalities/agents
+- Completed response should show which agents participated in final reasoning
+- Specialist stack should include Goal Strategist, Nutritionist, Sleep Expert, Movement Coach, Supplement Auditor, Safety Clinician, Cardiometabolic Strategist, and Orchestrator (with optional Behavior Architect and Recovery & Stress Regulator when relevant)
+- Goal Strategist owns strategic direction (6-24 week horizon): targets, phases, milestones, and pivot rules
+- Orchestrator owns operational execution (daily/weekly horizon) and must apply priority weighting/conflict resolution across specialists (for example safety or poor recovery can override aggressive fat-loss optimization)
+- Authority hierarchy: Goal Strategist (strategic) -> Orchestrator (operational) -> domain specialists
+- Safety Clinician retains veto authority for unsafe recommendations
+- Goal Strategist activation triggers: weekly review cadence, phase boundaries, and pivot-threshold conditions
+
 ---
 
 # 5. Baseline Establishment Needs
@@ -230,11 +247,18 @@ The intake should be conducted as a guided conversation by a dedicated intake co
 Requirements:
 - Intake starts with a coach-led opener and asks for top goals first (for example: top 3 goals).
 - Intake coach should gather key profile context early (for example: age, sex, weight, blood pressure, sleep, stress).
-- The coach must ask one question at a time, then adapt the next question from user response.
+- The coach must ask in compact batches (6-10 prompts max per batch), not one question at a time.
+- If user skips optional details, the system must record `unknown` and continue.
 - The coach must probe deeper in concern areas (risk signals or user-prioritized pain points).
 - The coach must remain supportive, neutral-professional first, and avoid interrogative tone.
 - The coach must map conversational answers into deterministic structured fields required by baseline schema.
+- The intake mapper should use deterministic parsing first, then AI-assisted parsing for unresolved fields within the active batch.
+- Any AI-assisted parsing must be field-scoped, validated/coerced through deterministic schema rules, and must never write unvalidated values.
 - The system should avoid persisting full free-form intake transcript long term; store structured output and concise summaries only.
+- On completion, intake must return:
+  - `USER_PROFILE_JSON`
+  - `COACHING_CONFIG_JSON`
+  - `OPEN_QUESTIONS`
 
 ### 5.8 Motivational + Transparency Requirements
 
@@ -272,7 +296,7 @@ Adaptive intake is considered complete when:
 - Goal-based adaptive questioning triggered
 - Tone adapts safely to user engagement
 - Risk-based clarifications triggered when needed
-- Intake coach asked one-question-at-a-time and adapted follow-up depth by concern
+- Intake coach asked batched prompts and adapted follow-up depth by concern
 - Intake summary generated
 - User feels guided, not interrogated
 - Structured data stored deterministically
@@ -347,6 +371,9 @@ Recommendations must:
 - Be prioritized by leverage
 - Include monitoring suggestions
 - Be modifiable by user
+- Be proactive and success-oriented using user history and trend data
+- Include near-term checkpoints (daily/weekly) tied to measurable outcomes
+- Include explicit pivot triggers when progress stalls
 
 ---
 
@@ -435,6 +462,9 @@ The system must:
 - The UI must render follow-up items as **coach questions for the user to answer next**, not as questions the user should ask the system.
 - Follow-up questions should drive iterative refinement and allow the system to store important structured details over time.
 - On provider failure, the user should still receive practical and safe fallback guidance.
+- Agent prompts must produce detailed progress-log responses when users share updates (for example: `Logged Update`, `Entry`, `Estimated Nutrition/Impact`, `Daily Totals Snapshot`, `Coach Insight`, `Next Task`, `Coach Question`).
+- Detail depth and recommendations must be personalized to user goals/objectives and current context (recent check-ins, trends, meds/safety constraints).
+- Specialist behavior should be formalized as agent contracts (base system prompt + per-specialist role/mission/responsibilities/guardrails/check-in triggers) and rendered at runtime with user-goal overrides.
 
 ### 11.2 Cost + Latency Guardrails
 
@@ -444,6 +474,48 @@ The system must:
 - Per-task token budgets must be enforced.
 - Duplicate submissions within a short time window should use response caching where safe.
 - Provider retries/fallbacks should avoid excessive duplicate billable calls.
+
+### 11.3 Reminder Notifications
+
+The system should support proactive reminder notifications to encourage consistency and follow-through.
+
+Requirements:
+- User can enable/disable reminders in Settings.
+- User can configure reminder interval.
+- Browser notification permission flow is explicit and user-controlled.
+- Reminder messages reinforce success-oriented check-ins and progress tracking.
+
+### 11.4 Specialist-Aligned Daily Check-In
+
+Daily check-in must be specialist-driven and adaptive by time-of-day so users can run it any time.
+
+Requirements:
+- Check-in questions are generated by AI specialists at runtime and assigned to specialist roles (for example Sleep Expert, Nutritionist, Movement Coach, Goal Strategist).
+- Check-in question set must be dynamic (no fixed always-required core question list); orchestrator selects questions based on user goals/objectives plus current-day and weekly context.
+- Question wording adapts to morning, afternoon, evening, and late-night contexts.
+- Questions must align to user-specific goals/objectives and known context (for example meds schedule, hydration targets, food logging, weigh-in, BP/HR capture).
+- Avoid generic "on-plan" phrasing when no explicit personalized plan has been created.
+- Check-in answers must accept free-text (not only strict yes/no); the utility model should parse intent plus structured details from a single reply.
+- If a user combines a status answer with details in one message (for example, "no, but I ate two slices of pizza"), the system should capture and store the detail without forcing a repeated yes/no-only retry.
+- User can cancel an in-progress check-in at any step (button and typed command).
+- Check-in remains available on-demand from chat at any time of day.
+- Check-in should resume like intake: when a check-in already exists for today, ask only pending items and avoid repeating completed questions.
+- Nutrition check-in responses should support conversational meal logging with coach-formatted summaries (meal items, rough estimated nutrition, daily-progress context, and next-step prompt).
+- Check-in summaries should use prior same-day check-in data so users see what is already done and what still needs attention.
+- Every check-in answer (hydration, meds, vitals, fasting, workout, nutrition) should return an expanded coaching update: logged item, goal-progress snapshot, insight, next guidance, and follow-up.
+- Structured artifacts from check-in (parsed answers, extras, evidence, per-step records) should be persisted for future suppression, trend analysis, and specialist planning.
+- `Daily Summary`, `Daily Plan`, and `What Next` actions must be generated by agent synthesis (not static templates) using explicit inputs: recent daily logs plus weekly and monthly summaries.
+- `Daily Summary` should include operational totals where possible: estimated calories/macros (protein/carbs/fat), hydration, sleep, meds/supplements status, and remaining-vs-goal guidance with explicit assumptions when data is incomplete.
+
+### 11.5 Specialist Data Coverage + Runtime Gap Capture
+
+Specialists must have access to the minimum user datasets they require at runtime.
+
+Requirements:
+- Before/while specialists run, system checks required dataset coverage per specialist.
+- If required user data is missing, system should still respond safely and mark specialist run as degraded.
+- If dataset or feature support is missing at runtime, system auto-creates a shared feedback entry for product follow-up.
+- Runtime gap entries should be deduplicated (to avoid flooding feedback for repeat prompts).
 
 ---
 

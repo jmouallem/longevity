@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -263,6 +263,67 @@
       .chat-view { gap: .65rem; }
       .view.chat-view { display: none; }
       .view.active.chat-view { display: grid; }
+      .chat-layout {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        gap: .65rem;
+      }
+      .chat-layout.history-collapsed {
+        grid-template-columns: 1fr;
+      }
+      .chat-layout.history-collapsed .thread-panel {
+        display: none;
+      }
+      .thread-panel {
+        border: 1px solid #d5e1ec;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+        padding: .6rem;
+      }
+      .thread-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .45rem;
+      }
+      .thread-panel-header .section-title { margin: 0; }
+      .thread-panel .muted { font-size: .8rem; }
+      .thread-actions {
+        display: flex;
+        gap: .35rem;
+        margin: .35rem 0 .5rem;
+      }
+      .thread-list {
+        display: grid;
+        gap: .35rem;
+        max-height: 560px;
+        overflow-y: auto;
+      }
+      .thread-item {
+        width: 100%;
+        text-align: left;
+        border: 1px solid #cbdcec;
+        background: #ffffff;
+        color: #223a51;
+        border-radius: 10px;
+        padding: .5rem .55rem;
+      }
+      .thread-item.active {
+        background: #e7f3fc;
+        border-color: #99c0de;
+      }
+      .thread-item .line1 {
+        font-size: .85rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .thread-item .line2 {
+        font-size: .76rem;
+        color: var(--muted);
+        margin-top: .12rem;
+      }
       .chat-surface {
         border: 1px solid #d6e1ec;
         background: linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 100%);
@@ -371,6 +432,59 @@
         background: #f7fbff;
         padding: .78rem;
       }
+      .chat-thread-title {
+        margin: 0 0 .45rem;
+        color: #30526e;
+        font-size: .88rem;
+      }
+      .chat-thread-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        margin-bottom: .45rem;
+      }
+      .chat-thread-row .chat-thread-title { margin: 0; }
+      .chat-history-toggle {
+        flex: 0 0 auto;
+        min-height: 34px;
+        padding: .35rem .55rem;
+        border-radius: 9px;
+        border: 1px solid var(--border);
+        background: #f3f7fc;
+        color: #28465f;
+        font-size: .78rem;
+      }
+      .chat-history-open {
+        display: none;
+      }
+      .chat-layout.history-collapsed .chat-history-open {
+        display: inline-flex;
+      }
+      .agent-status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+        margin-top: .28rem;
+      }
+      .agent-chip {
+        border: 1px solid #c6d9ea;
+        background: #edf5fc;
+        color: #264d69;
+        border-radius: 999px;
+        padding: .22rem .5rem;
+        font-size: .76rem;
+        line-height: 1.1;
+      }
+      .agent-chip.active {
+        border-color: #96c3e3;
+        background: #d9ebf9;
+      }
+      .agent-chip.done {
+        border-color: #b7dec7;
+        background: #e9f8ef;
+        color: #1d6947;
+      }
       .chat-answer h1, .chat-answer h2, .chat-answer h3, .chat-answer h4 {
         margin: .55rem 0 .35rem;
       }
@@ -421,6 +535,29 @@
         text-align: left;
         font-size: .86rem;
       }
+      .intake-chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+      }
+      .intake-chat-expand {
+        min-height: 34px;
+        padding: .32rem .55rem;
+        border-radius: 9px;
+        border: 1px solid var(--border);
+        background: #f3f7fc;
+        color: #28465f;
+        font-size: .78rem;
+      }
+      #intake-chat-log {
+        min-height: 220px;
+        max-height: 360px;
+      }
+      #intake-chat-log.expanded {
+        min-height: 380px;
+        max-height: 68vh;
+      }
       .hint { font-size: .84rem; color: var(--muted); margin-top: .3rem; }
       @media (max-width: 900px) {
         .grid-2 { grid-template-columns: 1fr; }
@@ -457,6 +594,15 @@
         .chat-controls {
           flex-direction: column;
           align-items: stretch;
+        }
+        .chat-layout {
+          grid-template-columns: 1fr;
+        }
+        .thread-panel {
+          order: 2;
+        }
+        .chat-layout.history-collapsed .thread-panel {
+          display: none;
         }
         .chat-controls .field,
         .chat-quick-actions {
@@ -515,55 +661,89 @@
 
       <section class="card">
         <article id="view-chat" class="view active chat-view">
-          <h2 class="section-title">Default Chat</h2>
-          <p class="muted">Ask a coaching question anytime. Mode controls response depth: Quick is faster, Deep is more thorough.</p>
-          <div class="chat-surface">
-          <div class="field">
-            <label for="chat-question">Question</label>
-            <div class="composer">
-              <input id="chat-image-file" type="file" accept="image/*" style="display:none;" />
-              <button class="composer-btn" id="chat-image" type="button" aria-label="Attach image">+</button>
-              <input id="chat-question" class="composer-input" type="text" placeholder="Ask anything" autocomplete="off" />
-              <div class="composer-tools">
-                <button class="composer-btn voice" id="chat-voice" type="button" aria-label="Voice input">Mic</button>
-                <button class="composer-send" id="chat-send" type="button" aria-label="Send">Go</button>
-              </div>
-            </div>
-            <div class="composer-hint">Enter to send. Shift+Enter for newline where supported.</div>
+  <h2 class="section-title">Default Chat</h2>
+  <p class="muted">Ask a coaching question anytime. Mode controls response depth: Quick is faster, Deep is more thorough.</p>
+  <div class="chat-layout">
+    <aside class="thread-panel">
+      <div class="thread-panel-header">
+        <h3 class="section-title" style="font-size:.96rem;">Chat History</h3>
+        <button class="chat-history-toggle" id="chat-history-hide" type="button" aria-expanded="true">Hide</button>
+      </div>
+      <p class="muted">Select prior threads or start a new chat.</p>
+      <div class="thread-actions">
+        <button class="btn-primary" id="chat-new-thread" type="button">New</button>
+        <button class="btn-ghost" id="chat-refresh-threads" type="button">Refresh</button>
+      </div>
+      <div id="chat-thread-list" class="thread-list"></div>
+    </aside>
+    <div class="chat-surface">
+      <div class="chat-thread-row">
+        <p id="chat-thread-title" class="chat-thread-title">Current thread: New chat</p>
+        <button class="chat-history-toggle chat-history-open" id="chat-history-show" type="button" aria-expanded="false">Show History</button>
+      </div>
+      <div class="field">
+        <label for="chat-question">Question</label>
+        <div class="composer">
+          <input id="chat-image-file" type="file" accept="image/*" style="display:none;" />
+          <button class="composer-btn" id="chat-image" type="button" aria-label="Attach image">+</button>
+          <input id="chat-question" class="composer-input" type="text" placeholder="Ask anything" autocomplete="off" />
+          <div class="composer-tools">
+            <button class="composer-btn voice" id="chat-voice" type="button" aria-label="Voice input">Mic</button>
+            <button class="composer-send" id="chat-send" type="button" aria-label="Send">Go</button>
           </div>
-          <div class="chat-controls">
-            <div class="field">
-              <label>Mode</label>
-              <div class="mode-wrap">
-                <button class="mode-button" id="chat-mode-button" aria-haspopup="true" aria-expanded="false" type="button">
-                  <span id="chat-mode-label">Auto</span>
-                  <span class="caret">v</span>
-                </button>
-                <div class="mode-panel" id="chat-mode-panel" hidden>
-                  <button class="mode-option active" type="button" data-mode="auto">
-                    <span class="line1">Auto <span class="mode-check">✓</span></span>
-                    <span class="line2">Chooses Quick or Deep from question complexity.</span>
-                  </button>
-                  <button class="mode-option" type="button" data-mode="quick">
-                    <span class="line1">Quick <span class="mode-check" hidden>✓</span></span>
-                    <span class="line2">Faster response with concise analysis.</span>
-                  </button>
-                  <button class="mode-option" type="button" data-mode="deep">
-                    <span class="line1">Deep <span class="mode-check" hidden>✓</span></span>
-                    <span class="line2">Uses Deep Thinker for broader reasoning.</span>
-                  </button>
+        </div>
+        <div class="composer-hint">Enter to send. Shift+Enter for newline where supported.</div>
+      </div>
+              <div class="chat-controls">
+                <div class="field">
+                  <label>Mode</label>
+                  <div class="mode-wrap">
+            <button class="mode-button" id="chat-mode-button" aria-haspopup="true" aria-expanded="false" type="button">
+              <span id="chat-mode-label">Auto</span>
+              <span class="caret">v</span>
+            </button>
+            <div class="mode-panel" id="chat-mode-panel" hidden>
+              <button class="mode-option active" type="button" data-mode="auto">
+                <span class="line1">Auto <span class="mode-check">ok</span></span>
+                <span class="line2">Chooses Quick or Deep from question complexity.</span>
+              </button>
+              <button class="mode-option" type="button" data-mode="quick">
+                <span class="line1">Quick <span class="mode-check" hidden>ok</span></span>
+                <span class="line2">Faster response with concise analysis.</span>
+              </button>
+              <button class="mode-option" type="button" data-mode="deep">
+                <span class="line1">Deep <span class="mode-check" hidden>ok</span></span>
+                <span class="line2">Uses Deep Thinker for broader reasoning.</span>
+              </button>
+            </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="chat-web-search">Research</label>
+                  <select id="chat-web-search">
+                    <option value="on" selected>Web Search On</option>
+                    <option value="off">Web Search Off</option>
+                  </select>
+                </div>
+                <div class="chat-quick-actions">
+                  <button class="btn-ghost" id="chat-daily-summary">Daily Summary</button>
+                  <button class="btn-ghost" id="chat-daily-plan">Daily Plan</button>
+                  <button class="btn-ghost" id="chat-what-next">What Next</button>
+                  <button class="btn-ghost" id="chat-clear">Clear</button>
+                  <button class="btn-ghost" id="chat-daily-start">Check In</button>
+                  <button class="btn-ghost" id="chat-daily-cancel" style="display:none;">Cancel Check In</button>
                 </div>
               </div>
-            </div>
-            <div class="chat-quick-actions">
-              <button class="btn-ghost" id="chat-clear">Clear</button>
-              <button class="btn-ghost" id="chat-daily-start">Daily Check-In</button>
-            </div>
-          </div>
-          <div class="notice" id="chat-notice"></div>
-          <div id="chat-answer" class="chat-answer" style="display:none;"></div>
-          </div>
-        </article>
+      <div class="notice" id="chat-notice"></div>
+      <div id="chat-agent-status" class="agent-status"></div>
+      <div class="field">
+        <label>Conversation</label>
+        <div id="chat-log" class="chat-log"></div>
+      </div>
+      <div id="chat-answer" class="chat-answer" style="display:none;"></div>
+    </div>
+  </div>
+</article>
 
         <article id="view-intake" class="view">
           <h2 class="section-title">Intake Coach</h2>
@@ -577,7 +757,13 @@
             <button class="btn-primary" id="intake-start">Start / Resume Intake Coach</button>
             <button class="btn-ghost" id="intake-refresh">Refresh Status</button>
           </div>
-          <div class="field"><label>Coach Chat</label><div id="intake-chat-log" class="chat-log"></div></div>
+          <div class="field">
+            <div class="intake-chat-header">
+              <label>Coach Chat</label>
+              <button type="button" id="intake-chat-expand" class="intake-chat-expand">Expand</button>
+            </div>
+            <div id="intake-chat-log" class="chat-log"></div>
+          </div>
           <div class="field">
             <label for="intake-answer">Your Answer</label>
             <textarea id="intake-answer" placeholder="Type answer for current intake question"></textarea>
@@ -625,8 +811,29 @@
               <div class="field"><label for="new-password">New Password</label><input id="new-password" type="password" /></div>
               <button class="btn-primary" id="password-save">Change Password</button>
               <div class="notice" id="password-notice"></div>
+              <h3 class="section-title" style="margin-top:1rem;">Reminder Notifications</h3>
+              <div class="field">
+                <label for="notify-enabled">Enable reminders</label>
+                <select id="notify-enabled">
+                  <option value="off">Off</option>
+                  <option value="on">On</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="notify-interval">Reminder interval (minutes)</label>
+                <input id="notify-interval" type="number" min="15" max="1440" value="120" />
+              </div>
+              <div class="row">
+                <button class="btn-primary" id="notify-save">Save Reminder Settings</button>
+                <button class="btn-ghost" id="notify-permission">Enable Browser Notifications</button>
+              </div>
+              <div class="row">
+                <button class="btn-ghost" id="notify-test">Send Test Reminder</button>
+              </div>
+              <div class="notice" id="notify-notice"></div>
               <h3 class="section-title" style="margin-top:1rem;">Data Reset</h3>
               <div class="row">
+                <button class="btn-ghost" id="reset-daily-data">Clear Daily Logs</button>
                 <button class="btn-ghost" id="reset-user-data">Reinitialize User Data</button>
                 <button class="btn-ghost" id="reset-model-usage">Reset Model Stats</button>
               </div>
@@ -700,6 +907,7 @@
       const views = ["chat", "summary", "intake", "settings", "usage", "feedback"];
       const intakeState = { sessionId: null, readyToComplete: false };
       const intakeChat = [];
+      const intakeUiState = { chatExpanded: false };
       let speechRecognition = null;
       let voiceListening = false;
       let selectedChatImage = null;
@@ -710,36 +918,79 @@
         payload: {},
         metricPayloads: [],
         extras: {},
+        answers: {},
+        evidence: {},
         profile: { goalFocus: "general", primaryGoal: "", topGoals: [] },
+        timeBucket: "morning",
+        intro: "",
+        latestSummaryMarkdown: "",
         steps: []
       };
       const DAILY_CORE_STEPS = [
-        { key: "sleep_hours", label: "Sleep Hours", question: "How many hours did you sleep last night?", type: "float", min: 0, max: 16 },
-        { key: "energy", label: "Energy", question: "On a 1-10 scale, what is your energy today?", type: "int", min: 1, max: 10 },
-        { key: "mood", label: "Mood", question: "On a 1-10 scale, what is your mood today?", type: "int", min: 1, max: 10 },
-        { key: "stress", label: "Stress", question: "On a 1-10 scale, what is your stress today?", type: "int", min: 1, max: 10 },
-        { key: "training_done", label: "Training Done", question: "Did you complete training today? (yes/no)", type: "bool" },
-        { key: "nutrition_on_plan", label: "Nutrition On Plan", question: "Was your nutrition on plan today? (yes/no)", type: "bool" }
+        { key: "sleep_hours", label: "Sleep Hours", specialist: "Sleep Expert", question: "How many hours did you sleep last night?", type: "float", min: 0, max: 16 },
+        { key: "energy", label: "Energy", specialist: "Recovery & Stress Regulator", question: "On a 1-10 scale, what is your energy today?", type: "int", min: 1, max: 10 },
+        { key: "mood", label: "Mood", specialist: "Behavior Architect", question: "On a 1-10 scale, what is your mood today?", type: "int", min: 1, max: 10 },
+        { key: "stress", label: "Stress", specialist: "Recovery & Stress Regulator", question: "On a 1-10 scale, what is your stress today?", type: "int", min: 1, max: 10 },
+        { key: "training_done", label: "Training Done", specialist: "Movement Coach", question: "Did you complete training today? (yes/no)", type: "bool" },
+        { key: "nutrition_on_plan", label: "Food Logged", specialist: "Nutritionist", question: "Did you log your food intake today? (yes/no)", type: "bool" }
       ];
+      const DAILY_PAYLOAD_KEYS = new Set(["sleep_hours", "energy", "mood", "stress", "training_done", "nutrition_on_plan", "notes"]);
       const DAILY_OPTIONAL_SIGNAL_STEP = {
         key: "tracked_signals",
         label: "Optional Signals",
+        specialist: "Orchestrator",
         question: "Which optional signals did you track today? (comma separated: weight, blood pressure, bed/wake times, last meal time, none)",
         type: "signals"
       };
       const DAILY_OPTIONAL_STEPS = {
-        weight: { key: "weight_kg", label: "Weight", question: "What was your weight this morning? (kg or lbs)", type: "weight" },
-        bp: { key: "bp", label: "Blood Pressure", question: "What was your blood pressure reading? (e.g., 120/80)", type: "bp" },
-        sleep_timing: { key: "sleep_timing", label: "Sleep Timing", question: "What time did you go to bed and wake up? (e.g., 11:00pm, 6:30am)", type: "text" },
-        last_meal: { key: "last_meal", label: "Last Meal Time", question: "What time was your last meal?", type: "text" }
+        weight: { key: "weight_kg", label: "Weight", specialist: "Cardiometabolic Strategist", question: "What was your weight this morning? (kg or lbs)", type: "weight" },
+        bp: { key: "bp", label: "Blood Pressure", specialist: "Cardiometabolic Strategist", question: "What was your blood pressure reading? (e.g., 120/80)", type: "bp" },
+        sleep_timing: { key: "sleep_timing", label: "Sleep Timing", specialist: "Sleep Expert", question: "What time did you go to bed and wake up? (e.g., 11:00pm, 6:30am)", type: "text" },
+        last_meal: { key: "last_meal", label: "Last Meal Time", specialist: "Nutritionist", question: "What time was your last meal?", type: "text" }
       };
-      const DAILY_NOTES_STEP = { key: "notes", label: "Notes", question: "Any short note for today? (type 'skip' to skip)", type: "text" };
+      const DAILY_NOTES_STEP = { key: "notes", label: "Notes", specialist: "Goal Strategist", question: "Any short note for today? (type 'skip' to skip)", type: "text" };
+      const DAILY_NUTRITION_LOG_CHOICE_STEP = {
+        key: "nutrition_log_choice",
+        label: "Nutrition Log Choice",
+        specialist: "Nutritionist",
+        question: "Would you like to log food now or later? (now/later)",
+        type: "text"
+      };
+      const DAILY_NUTRITION_LOG_DETAILS_STEP = {
+        key: "nutrition_food_details",
+        label: "Food Details",
+        specialist: "Nutritionist",
+        question: "Please log what you ate so far (include rough portions).",
+        type: "text"
+      };
       const CHAT_MODE_PRESETS = {
         auto: { label: "Auto", mode: "quick", deepThink: false },
         quick: { label: "Quick", mode: "quick", deepThink: false },
         deep: { label: "Deep", mode: "deep", deepThink: true }
       };
       let selectedChatMode = "auto";
+      const chatState = {
+        currentThreadId: null,
+        threads: [],
+        messages: [],
+        progressTimer: null,
+      };
+      const chatUiState = {
+        historyCollapsed: false,
+      };
+      const reminderState = {
+        enabled: false,
+        intervalMinutes: 120,
+        timerId: null,
+        title: "Longevity Check-In",
+        body: "Quick check-in: log your progress and keep momentum."
+      };
+      const busyState = {
+        chat: 0,
+        intake: 0,
+        checkin: 0,
+      };
+      let intakePrimaryGoal = "";
 
       function authHeaders() {
         return { "Authorization": "Bearer " + token, "Content-Type": "application/json" };
@@ -749,6 +1000,82 @@
         const node = el(id);
         node.textContent = text || "";
         node.className = "notice" + (kind ? " " + kind : "");
+      }
+
+      function setBusy(scope, isBusy, label) {
+        const key = String(scope || "");
+        if (!Object.prototype.hasOwnProperty.call(busyState, key)) return;
+        if (isBusy) busyState[key] += 1;
+        else busyState[key] = Math.max(0, busyState[key] - 1);
+        const active = busyState[key] > 0;
+
+        if (key === "chat") {
+          const sendBtn = el("chat-send");
+          const voiceBtn = el("chat-voice");
+          const imgBtn = el("chat-image");
+          if (sendBtn) {
+            sendBtn.disabled = active;
+            sendBtn.textContent = active ? (label || "Working...") : "Go";
+          }
+          if (voiceBtn) voiceBtn.disabled = active;
+          if (imgBtn) imgBtn.disabled = active;
+        } else if (key === "intake") {
+          const sendBtn = el("intake-answer-send");
+          const startBtn = el("intake-start");
+          const completeBtn = el("intake-complete");
+          if (sendBtn) {
+            sendBtn.disabled = active;
+            sendBtn.textContent = active ? (label || "Working...") : "Send Answer";
+          }
+          if (startBtn) {
+            startBtn.disabled = active;
+            startBtn.textContent = active ? "Working..." : "Start / Resume Intake Coach";
+          }
+          if (completeBtn) {
+            completeBtn.disabled = active;
+            if (!active) completeBtn.textContent = "Finalize Intake";
+          }
+        } else if (key === "checkin") {
+          const startBtn = el("chat-daily-start");
+          if (startBtn) {
+            startBtn.disabled = active;
+            startBtn.textContent = active ? (label || "Check In (Working...)") : "Check In";
+          }
+        }
+      }
+
+      function notificationSupported() {
+        return typeof window !== "undefined" && "Notification" in window;
+      }
+
+      function clearReminderTimer() {
+        if (reminderState.timerId) {
+          clearInterval(reminderState.timerId);
+          reminderState.timerId = null;
+        }
+      }
+
+      function showReminderNotification() {
+        if (!notificationSupported()) return;
+        if (Notification.permission !== "granted") return;
+        const title = reminderState.title || "Longevity Check-In";
+        const body = reminderState.body || "Quick check-in: log your progress and keep momentum.";
+        const n = new Notification(title, { body });
+        n.onclick = () => {
+          window.focus();
+          showView("chat");
+        };
+      }
+
+      function scheduleReminderTimer() {
+        clearReminderTimer();
+        if (!reminderState.enabled) return;
+        if (!notificationSupported() || Notification.permission !== "granted") {
+          setNotice("notify-notice", "Reminders saved, but browser notification permission is not granted.", "warn");
+          return;
+        }
+        const intervalMs = Math.max(15, Number(reminderState.intervalMinutes || 120)) * 60 * 1000;
+        reminderState.timerId = setInterval(showReminderNotification, intervalMs);
       }
 
       function escapeHtml(value) {
@@ -810,13 +1137,26 @@
         return html || "<p>No answer content.</p>";
       }
 
+      function toggleIntakeChatExpanded() {
+        const log = el("intake-chat-log");
+        const btn = el("intake-chat-expand");
+        if (!log || !btn) return;
+        intakeUiState.chatExpanded = !intakeUiState.chatExpanded;
+        log.classList.toggle("expanded", intakeUiState.chatExpanded);
+        btn.textContent = intakeUiState.chatExpanded ? "Collapse" : "Expand";
+      }
+
       function addIntakeChatMessage(role, text) {
         if (!text) return;
         intakeChat.push({ role, text });
         const log = el("intake-chat-log");
         const bubble = document.createElement("div");
         bubble.className = "bubble " + role;
-        bubble.textContent = text;
+        if (role === "coach") {
+          bubble.innerHTML = renderSimpleMarkdown(text);
+        } else {
+          bubble.innerHTML = "<p>" + escapeHtml(text) + "</p>";
+        }
         log.appendChild(bubble);
         log.scrollTop = log.scrollHeight;
       }
@@ -880,6 +1220,208 @@
         return CHAT_MODE_PRESETS.quick;
       }
 
+      function isWebSearchEnabled() {
+        return (el("chat-web-search")?.value || "on") === "on";
+      }
+
+      function setChatThreadTitle() {
+        const active = chatState.threads.find((t) => t.thread_id === chatState.currentThreadId);
+        const title = active ? active.title : "New chat";
+        el("chat-thread-title").textContent = "Current thread: " + title;
+      }
+
+      function renderChatThreads() {
+        const list = el("chat-thread-list");
+        list.innerHTML = "";
+        if (!chatState.threads.length) {
+          const empty = document.createElement("div");
+          empty.className = "hint";
+          empty.textContent = "No prior chats yet.";
+          list.appendChild(empty);
+          setChatThreadTitle();
+          return;
+        }
+        chatState.threads.forEach((thread) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "thread-item" + (thread.thread_id === chatState.currentThreadId ? " active" : "");
+          const count = Number(thread.message_count || 0);
+          btn.innerHTML = "<div class=\"line1\">" + escapeHtml(thread.title || "Chat") + "</div>"
+            + "<div class=\"line2\">" + count + " msgs</div>";
+          btn.addEventListener("click", async () => {
+            await loadThreadMessages(thread.thread_id);
+          });
+          list.appendChild(btn);
+        });
+        setChatThreadTitle();
+      }
+
+      function renderChatLog() {
+        const log = el("chat-log");
+        log.innerHTML = "";
+        if (!chatState.messages.length) {
+          const empty = document.createElement("div");
+          empty.className = "hint";
+          empty.textContent = "Start a question to create your first thread.";
+          log.appendChild(empty);
+          return;
+        }
+        chatState.messages.forEach((msg) => {
+          const row = document.createElement("div");
+          const role = String(msg.role || "");
+          row.className = "bubble " + (role === "assistant" ? "coach" : "user");
+          if (role === "assistant") {
+            row.innerHTML = renderSimpleMarkdown(msg.content || "");
+          } else {
+            row.innerHTML = "<p>" + escapeHtml(msg.content || "") + "</p>";
+          }
+          log.appendChild(row);
+        });
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function setHistoryCollapsed(collapsed, persist = true) {
+        const layout = document.querySelector(".chat-layout");
+        const hideBtn = el("chat-history-hide");
+        const showBtn = el("chat-history-show");
+        if (!layout || !hideBtn || !showBtn) return;
+        chatUiState.historyCollapsed = !!collapsed;
+        layout.classList.toggle("history-collapsed", chatUiState.historyCollapsed);
+        hideBtn.textContent = "Hide";
+        hideBtn.setAttribute("aria-expanded", chatUiState.historyCollapsed ? "false" : "true");
+        showBtn.textContent = "Show History";
+        showBtn.setAttribute("aria-expanded", chatUiState.historyCollapsed ? "false" : "true");
+        if (persist) {
+          try {
+            sessionStorage.setItem("chat_history_collapsed", chatUiState.historyCollapsed ? "1" : "0");
+          } catch (_) {
+            // Ignore storage failures.
+          }
+        }
+      }
+
+      function toggleHistoryCollapsed() {
+        setHistoryCollapsed(!chatUiState.historyCollapsed, true);
+      }
+
+      function initHistoryCollapsedState() {
+        let saved = null;
+        try {
+          saved = sessionStorage.getItem("chat_history_collapsed");
+        } catch (_) {
+          saved = null;
+        }
+        if (saved === "1" || saved === "0") {
+          setHistoryCollapsed(saved === "1", false);
+          return;
+        }
+        const mobileDefault = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
+        setHistoryCollapsed(!!mobileDefault, false);
+      }
+
+      async function loadChatThreads() {
+        const res = await fetch("/chat/threads", { headers: { "Authorization": "Bearer " + token } });
+        if (!res.ok) return;
+        const body = await res.json();
+        chatState.threads = Array.isArray(body.items) ? body.items : [];
+        if (!chatState.currentThreadId && chatState.threads.length) {
+          chatState.currentThreadId = chatState.threads[0].thread_id;
+          await loadThreadMessages(chatState.currentThreadId);
+          return;
+        }
+        renderChatThreads();
+      }
+
+      async function loadThreadMessages(threadId) {
+        const res = await fetch("/chat/threads/" + threadId + "/messages", {
+          headers: { "Authorization": "Bearer " + token }
+        });
+        if (!res.ok) {
+          setNotice("chat-notice", "Could not load chat thread.", "error");
+          return;
+        }
+        const body = await res.json();
+        chatState.currentThreadId = body.thread_id;
+        chatState.messages = Array.isArray(body.messages) ? body.messages : [];
+        renderChatThreads();
+        renderChatLog();
+      }
+
+      function startNewChat() {
+        if (dailyCheckin.active) {
+          cancelDailyCheckin("Check-in canceled for a new chat.");
+        }
+        chatState.currentThreadId = null;
+        chatState.messages = [];
+        el("chat-question").value = "";
+        el("chat-answer").style.display = "none";
+        el("chat-answer").innerHTML = "";
+        el("chat-agent-status").innerHTML = "";
+        setNotice("chat-notice", "New chat ready.", "ok");
+        renderChatThreads();
+        renderChatLog();
+      }
+
+      function buildAgentProgressPlan(question, resolved) {
+        const q = String(question || "").toLowerCase();
+        const goal = String(intakePrimaryGoal || "").toLowerCase();
+        const includesSupplement = q.includes("supplement");
+        const looksGoalStrategy = ["goal", "target", "milestone", "phase", "6 week", "12 week", "3 month", "6 month", "roadmap", "plan", "pivot", "stall", "objective"].some((k) => q.includes(k));
+        const looksSleep = ["sleep", "wake", "tired", "fatigue", "recovery"].some((k) => q.includes(k));
+        const looksNutrition = ["eat", "meal", "nutrition", "diet", "protein", "calorie", "supplement"].some((k) => q.includes(k));
+        const looksMovement = ["train", "exercise", "steps", "workout", "cardio", "strength"].some((k) => q.includes(k));
+        const looksCardioMeta = ["ldl", "hdl", "triglyceride", "cholesterol", "lipid", "bp", "blood pressure", "insulin"].some((k) => q.includes(k));
+        const looksBehavior = ["habit", "adherence", "compliance", "consistency", "friction", "motivation", "routine"].some((k) => q.includes(k));
+        const looksRecoveryStress = ["recovery", "stress", "hrv", "cortisol", "deload", "burnout", "alcohol"].some((k) => q.includes(k));
+        const goalLooksWeight = ["weight", "fat", "metabolic", "body comp"].some((k) => goal.includes(k));
+        const goalLooksCardio = ["heart", "bp", "blood pressure", "cholesterol", "lipid", "cardio"].some((k) => goal.includes(k));
+        const goalLooksEnergy = ["energy", "fatigue", "recovery"].some((k) => goal.includes(k));
+        const goalLooksClarity = ["mental", "clarity", "focus", "stress", "sleep"].some((k) => goal.includes(k));
+
+        if (resolved.deepThink || resolved.mode === "deep") {
+          const deepPlan = [];
+          deepPlan.push({ id: "goal_strategist", label: "Goal Strategist" });
+          deepPlan.push({ id: "nutritionist", label: "Nutritionist" });
+          deepPlan.push({ id: "sleep_expert", label: "Sleep Expert" });
+          if (looksMovement || goalLooksWeight) deepPlan.push({ id: "movement_coach", label: "Movement Coach" });
+          deepPlan.push({ id: "cardiometabolic_strategist", label: "Cardiometabolic Strategist" });
+          if (looksBehavior) deepPlan.push({ id: "behavior_architect", label: "Behavior Architect" });
+          if (looksRecoveryStress || goalLooksEnergy || goalLooksClarity) deepPlan.push({ id: "recovery_stress_regulator", label: "Recovery & Stress Regulator" });
+          if (includesSupplement) deepPlan.push({ id: "supplement_auditor", label: "Supplement Auditor" });
+          deepPlan.push({ id: "safety_clinician", label: "Safety Clinician" });
+          deepPlan.push({ id: "orchestrator", label: "Orchestrator" });
+          return deepPlan;
+        }
+        const quickPlan = [];
+        if (looksGoalStrategy || goalLooksWeight || goalLooksCardio || goalLooksEnergy || goalLooksClarity) {
+          quickPlan.push({ id: "goal_strategist", label: "Goal Strategist" });
+        }
+        if (looksCardioMeta || goalLooksCardio) quickPlan.push({ id: "cardiometabolic_strategist", label: "Cardiometabolic Strategist" });
+        if (looksNutrition || goalLooksWeight) quickPlan.push({ id: "nutritionist", label: "Nutritionist" });
+        if (looksSleep || goalLooksEnergy || goalLooksClarity) quickPlan.push({ id: "sleep_expert", label: "Sleep Expert" });
+        if (looksMovement || goalLooksWeight) quickPlan.push({ id: "movement_coach", label: "Movement Coach" });
+        if (includesSupplement) quickPlan.push({ id: "supplement_auditor", label: "Supplement Auditor" });
+        if (looksBehavior) quickPlan.push({ id: "behavior_architect", label: "Behavior Architect" });
+        if (looksRecoveryStress || goalLooksEnergy || goalLooksClarity) quickPlan.push({ id: "recovery_stress_regulator", label: "Recovery & Stress Regulator" });
+        quickPlan.push({ id: "safety_clinician", label: "Safety Clinician" });
+        quickPlan.push({ id: "orchestrator", label: "Orchestrator" });
+        const seen = new Set();
+        return quickPlan.filter((node) => {
+          if (seen.has(node.id)) return false;
+          seen.add(node.id);
+          return true;
+        });
+      }
+
+      function renderAgentStatus(plan, activeId, doneIds) {
+        const done = new Set(doneIds || []);
+        const html = (plan || []).map((node) => {
+          const stateClass = done.has(node.id) ? "done" : (activeId === node.id ? "active" : "");
+          return "<span class=\"agent-chip " + stateClass + "\">" + escapeHtml(node.label) + "</span>";
+        }).join("");
+        el("chat-agent-status").innerHTML = html;
+      }
+
       function currentDailyStep() {
         return dailyCheckin.steps[dailyCheckin.index] || null;
       }
@@ -907,6 +1449,65 @@
         return DAILY_CORE_STEPS.slice();
       }
 
+      function localDailyTimeBucket(hour) {
+        if (hour >= 5 && hour <= 11) return "morning";
+        if (hour >= 12 && hour <= 16) return "afternoon";
+        if (hour >= 17 && hour <= 21) return "evening";
+        return "late_night";
+      }
+
+      function defaultDailyCheckinPlan(profile, localHour) {
+        const bucket = localDailyTimeBucket(localHour);
+        const intro = "Specialists prepared this check-in for your goals and current time of day.";
+        const steps = [...orderedCoreStepsByGoal(profile.goalFocus), DAILY_OPTIONAL_SIGNAL_STEP, DAILY_NOTES_STEP];
+        return {
+          goalFocus: profile.goalFocus || "general",
+          timeBucket: bucket,
+          intro,
+          steps
+        };
+      }
+
+      async function loadDailyCheckinPlan(profile) {
+        const now = new Date();
+        const fallback = defaultDailyCheckinPlan(profile, now.getHours());
+        try {
+          const res = await fetch("/coach/daily-checkin-plan", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              local_hour: now.getHours(),
+              timezone_offset_minutes: now.getTimezoneOffset(),
+              generate_with_ai: true
+            })
+          });
+          if (!res.ok) return fallback;
+          const body = await res.json();
+          const rows = Array.isArray(body.questions) ? body.questions : [];
+          if (!rows.length) return fallback;
+          const steps = rows
+            .filter((x) => x && x.key && x.type && x.question)
+            .map((x) => ({
+              key: String(x.key),
+              label: String(x.label || x.key),
+              specialist: String(x.specialist || "Coach"),
+              question: String(x.question),
+              type: String(x.type),
+              min: (x.min == null ? undefined : Number(x.min)),
+              max: (x.max == null ? undefined : Number(x.max)),
+            }));
+          if (!steps.length) return fallback;
+          return {
+            goalFocus: String(body.goal_focus || fallback.goalFocus),
+            timeBucket: String(body.time_bucket || fallback.timeBucket),
+            intro: String(body.intro || fallback.intro),
+            steps,
+          };
+        } catch (_) {
+          return fallback;
+        }
+      }
+
       async function loadDailyCheckinProfile() {
         try {
           const res = await fetch("/intake/baseline", { headers: { "Authorization": "Bearer " + token } });
@@ -924,20 +1525,192 @@
         }
       }
 
+      async function loadDailyLogForDate(logDate) {
+        try {
+          const res = await fetch("/daily-log?from=" + encodeURIComponent(logDate) + "&to=" + encodeURIComponent(logDate), {
+            headers: { "Authorization": "Bearer " + token }
+          });
+          if (!res.ok) return null;
+          const body = await res.json();
+          const items = Array.isArray(body.items) ? body.items : [];
+          return items.length ? items[0] : null;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      async function loadMetricSignalsForDate(logDate) {
+        try {
+          // Use local-day boundaries converted to ISO UTC to avoid missing same-day local logs.
+          const startLocal = new Date(String(logDate) + "T00:00:00");
+          const endLocal = new Date(String(logDate) + "T23:59:59");
+          const startIso = startLocal.toISOString();
+          const endIso = endLocal.toISOString();
+          const metricTypes = ["weight_kg", "bp_systolic", "bp_diastolic", "resting_hr_bpm"];
+          const rows = [];
+          for (const mt of metricTypes) {
+            const url = "/metrics?metric_type=" + encodeURIComponent(mt)
+              + "&from=" + encodeURIComponent(startIso)
+              + "&to=" + encodeURIComponent(endIso);
+            const res = await fetch(url, { headers: { "Authorization": "Bearer " + token } });
+            if (!res.ok) continue;
+            const body = await res.json().catch(() => ({}));
+            if (Array.isArray(body.items)) rows.push(...body.items);
+          }
+          const hasType = (t) => rows.some((x) => String(x.metric_type || "").toLowerCase() === String(t).toLowerCase());
+          return {
+            weigh_in_done: hasType("weight_kg"),
+            bp_checked: hasType("bp_systolic") || hasType("bp_diastolic"),
+            hr_checked: hasType("resting_hr_bpm"),
+          };
+        } catch (_) {
+          return { weigh_in_done: false, bp_checked: false, hr_checked: false };
+        }
+      }
+
+      function hasValue(v) {
+        if (v === null || v === undefined) return false;
+        if (typeof v === "string") return v.trim().length > 0;
+        return true;
+      }
+
+      function hydrateDailyPayloadFromExistingLog(existingLog) {
+        if (!existingLog) return { payload: {}, extras: {}, answers: {}, answeredKeys: [] };
+        const checkinBlob = (existingLog && typeof existingLog.checkin_payload_json === "object" && existingLog.checkin_payload_json)
+          ? existingLog.checkin_payload_json
+          : {};
+        const parsedPayload = (checkinBlob && typeof checkinBlob.payload === "object") ? checkinBlob.payload : {};
+        const parsedExtras = (checkinBlob && typeof checkinBlob.extras === "object") ? checkinBlob.extras : {};
+        const parsedAnswers = (checkinBlob && typeof checkinBlob.answers === "object") ? checkinBlob.answers : {};
+        const answeredKeys = Object.keys(parsedAnswers || {});
+        const payload = {
+          ...parsedPayload,
+        };
+        if (hasValue(existingLog.sleep_hours)) payload.sleep_hours = Number(existingLog.sleep_hours);
+        if (hasValue(existingLog.energy)) payload.energy = Number(existingLog.energy);
+        if (hasValue(existingLog.mood)) payload.mood = Number(existingLog.mood);
+        if (hasValue(existingLog.stress)) payload.stress = Number(existingLog.stress);
+        if (hasValue(existingLog.training_done)) payload.training_done = !!existingLog.training_done;
+        if (hasValue(existingLog.nutrition_on_plan)) payload.nutrition_on_plan = !!existingLog.nutrition_on_plan;
+        if (hasValue(existingLog.notes)) payload.notes = String(existingLog.notes);
+        return {
+          payload,
+          extras: parsedExtras,
+          answers: parsedAnswers,
+          answeredKeys
+        };
+      }
+
+      function filterPendingDailyCheckinSteps(steps, payload, hasExistingLog, evidence, answeredKeys) {
+        const answered = new Set(Array.isArray(answeredKeys) ? answeredKeys.map((x) => String(x)) : []);
+        let pending = Array.isArray(steps) ? steps.slice() : [];
+        // Intake-like behavior: when today's check-in already exists, only ask unanswered fields.
+        pending = pending.filter((step) => {
+          if (!step || !step.key) return false;
+          if (answered.has(String(step.key))) return false;
+          if (DAILY_PAYLOAD_KEYS.has(step.key)) {
+            return !hasValue(payload[step.key]);
+          }
+          if (step.key === "weight_kg" || step.key === "weigh_in_done") return !Boolean((evidence || {}).weigh_in_done);
+          if (step.key === "bp" || step.key === "bp_checked") return !Boolean((evidence || {}).bp_checked);
+          if (step.key === "resting_hr_bpm" || step.key === "hr_checked") return !Boolean((evidence || {}).hr_checked);
+          // If a daily log already exists for today, skip optional signal loops by default.
+          if (hasExistingLog && (step.key === "tracked_signals" || step.key === "notes")) {
+            return false;
+          }
+          return true;
+        });
+        return pending;
+      }
+
+      function isCancelDailyCheckinInput(value) {
+        const t = String(value || "").trim().toLowerCase();
+        return t === "cancel" || t === "/cancel" || t === "stop";
+      }
+
+      function cancelDailyCheckin(reason) {
+        if (!dailyCheckin.active) return;
+        dailyCheckin.active = false;
+        dailyCheckin.index = 0;
+        dailyCheckin.payload = {};
+        dailyCheckin.metricPayloads = [];
+        dailyCheckin.extras = {};
+        dailyCheckin.answers = {};
+        dailyCheckin.steps = [];
+        dailyCheckin.intro = "";
+        dailyCheckin.latestSummaryMarkdown = "";
+        el("chat-daily-cancel").style.display = "none";
+        el("chat-question").value = "";
+        const out = el("chat-answer");
+        out.style.display = "block";
+        out.innerHTML = "<h3>Check-In Canceled</h3><p>You can restart check-in anytime from this chat.</p>";
+        setNotice("chat-notice", reason || "Check-in canceled.", "warn");
+      }
+
       function renderDailyCheckinPrompt(extraMessage) {
         const out = el("chat-answer");
         out.style.display = "block";
         const step = currentDailyStep();
-        const hint = "Coach adapts this check-in to your goals and the signals you track.";
+        const bucket = String(dailyCheckin.timeBucket || "").replace("_", " ");
+        const hint = "Specialists adapt this check-in to your goals, current time of day, and tracked signals.";
         if (!step) {
-          out.innerHTML = "<h3>Daily Check-In</h3><p>Preparing check-in...</p>";
+          out.innerHTML = "<h3>Check-In Coach</h3><p>Preparing your adaptive check-in...</p>";
           return;
         }
-        out.innerHTML = "<h3>Daily Check-In Coach</h3>"
+        const specialist = step.specialist ? (String(step.specialist) + " asks:") : "Coach asks:";
+        let onTrackHelp = "";
+        const goal = String((dailyCheckin.profile || {}).goalFocus || "general");
+        if (step.key === "nutrition_on_plan") {
+          onTrackHelp = "This question confirms meal logging so coaching can tailor guidance to your actual intake.";
+        } else if (step.key === "training_done") {
+          onTrackHelp = "On-track training means you completed the planned session or your minimum movement target for today.";
+        }
+        out.innerHTML = "<h3>Check-In Coach</h3>"
+          + (dailyCheckin.latestSummaryMarkdown
+            ? ("<div style=\"margin:.5rem 0 .7rem;\">" + renderSimpleMarkdown(dailyCheckin.latestSummaryMarkdown) + "</div>")
+            : "")
           + "<p><strong>Step " + (dailyCheckin.index + 1) + " of " + dailyCheckin.steps.length + ":</strong> " + escapeHtml(step.label) + "</p>"
-          + "<p>" + escapeHtml(step.question) + "</p>"
-          + "<p><em>" + escapeHtml(hint) + "</em></p>"
+          + "<p><strong>" + escapeHtml(specialist) + "</strong> " + escapeHtml(step.question) + "</p>"
+          + (onTrackHelp ? "<p><em>" + escapeHtml(onTrackHelp) + "</em></p>" : "")
+          + "<p><em>" + escapeHtml(hint) + " (" + escapeHtml(bucket) + "). Type 'cancel' to stop this check-in at any time.</em></p>"
           + (extraMessage ? "<p>" + escapeHtml(extraMessage) + "</p>" : "");
+      }
+
+      async function buildDailyFoodLogSummary(entryText) {
+        const label = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const res = await fetch("/coach/daily-checkin/food-log-summary", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            entry_text: String(entryText || "").trim(),
+            log_date: dailyCheckin.logDate,
+            local_time_label: label
+          })
+        });
+        if (!res.ok) return "";
+        const body = await res.json().catch(() => ({}));
+        return String(body.markdown || "").trim();
+      }
+
+      async function buildDailyStepSummary(step, rawAnswer, parsedValue) {
+        const res = await fetch("/coach/daily-checkin/step-summary", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            key: String(step.key || ""),
+            label: String(step.label || step.key || "Check-In"),
+            specialist: String(step.specialist || "Coach"),
+            raw_answer: String(rawAnswer || ""),
+            parsed_value: parsedValue,
+            log_date: dailyCheckin.logDate,
+            time_bucket: String(dailyCheckin.timeBucket || ""),
+            current_payload: dailyCheckin.payload || {},
+            current_extras: dailyCheckin.extras || {}
+          })
+        });
+        if (!res.ok) return "";
+        const body = await res.json().catch(() => ({}));
+        return String(body.markdown || "").trim();
       }
 
       function parseDailyCheckinValue(step, rawText) {
@@ -984,40 +1757,148 @@
           return selected;
         }
         if (step.type === "text") {
+          if (step.key === "nutrition_log_choice") {
+            const normalized = text.toLowerCase();
+            if (["now", "log now", "yes", "y"].includes(normalized)) return "now";
+            if (["later", "log later", "no", "n"].includes(normalized)) return "later";
+            throw new Error("Please answer 'now' or 'later'.");
+          }
           if (text.toLowerCase() === "skip") return null;
           return text.slice(0, 1200);
         }
         return text;
       }
 
+      async function parseDailyCheckinBoolWithUtility(step, rawText) {
+        const res = await fetch("/coach/daily-checkin/parse-answer", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            key: String(step.key || ""),
+            question: String(step.question || ""),
+            answer_text: String(rawText || ""),
+            value_type: "bool",
+            goal_focus: String((dailyCheckin.profile || {}).goalFocus || "general"),
+            time_bucket: String(dailyCheckin.timeBucket || "unknown")
+          })
+        });
+        if (!res.ok) throw new Error("Could not parse this check-in answer.");
+        return await res.json();
+      }
+
       async function startDailyCheckin() {
-        const profile = await loadDailyCheckinProfile();
-        dailyCheckin.active = true;
-        dailyCheckin.index = 0;
-        dailyCheckin.logDate = new Date().toISOString().slice(0, 10);
-        dailyCheckin.payload = {};
-        dailyCheckin.metricPayloads = [];
-        dailyCheckin.extras = {};
-        dailyCheckin.profile = profile;
-        dailyCheckin.steps = [...orderedCoreStepsByGoal(profile.goalFocus), DAILY_OPTIONAL_SIGNAL_STEP, DAILY_NOTES_STEP];
-        el("chat-question").value = "";
-        el("chat-question").focus();
-        const starter = profile.primaryGoal
-          ? ("Daily check-in started for your goal: " + profile.primaryGoal + ".")
-          : "Daily check-in started.";
-        renderDailyCheckinPrompt("Answer in the chat box and press Send.");
-        setNotice("chat-notice", starter, "ok");
+        if (dailyCheckin.active) {
+          setNotice("chat-notice", "A check-in is already active. Answer, complete, or cancel it first.", "warn");
+          return;
+        }
+        setBusy("checkin", true, "Check In (Working...)");
+        const out = el("chat-answer");
+        out.style.display = "block";
+        out.innerHTML = "<h3>Check-In Coach</h3><p>Working in the background to build your specialist check-in...</p>"
+          + "<p><em>This can take a few seconds while specialists generate questions from your goals and latest data.</em></p>";
+        setNotice("chat-notice", "Building your adaptive check-in in the background...", "");
+        try {
+          const profile = await loadDailyCheckinProfile();
+          const plan = await loadDailyCheckinPlan(profile);
+          const logDate = new Date().toISOString().slice(0, 10);
+          const existingLog = await loadDailyLogForDate(logDate);
+          const evidence = await loadMetricSignalsForDate(logDate);
+          const hydrated = hydrateDailyPayloadFromExistingLog(existingLog);
+          const hydratedPayload = hydrated.payload || {};
+          const pendingSteps = filterPendingDailyCheckinSteps(
+            Array.isArray(plan.steps) ? plan.steps : [],
+            hydratedPayload,
+            !!existingLog,
+            evidence,
+            hydrated.answeredKeys || []
+          );
+          if (!pendingSteps.length) {
+            dailyCheckin.active = false;
+            dailyCheckin.index = 0;
+            dailyCheckin.logDate = logDate;
+            dailyCheckin.payload = hydratedPayload;
+            dailyCheckin.metricPayloads = [];
+            dailyCheckin.extras = hydrated.extras || {};
+            dailyCheckin.answers = hydrated.answers || {};
+            dailyCheckin.evidence = evidence;
+            dailyCheckin.profile = profile;
+            dailyCheckin.timeBucket = plan.timeBucket || "morning";
+          dailyCheckin.intro = plan.intro || "";
+          dailyCheckin.latestSummaryMarkdown = "";
+          dailyCheckin.steps = [];
+            el("chat-daily-cancel").style.display = "none";
+            out.innerHTML = "<h3>Check-In Coach</h3><p>Today's check-in is already complete.</p>"
+              + "<p><em>No pending questions right now. If needed, ask a direct update in chat (for example: \"update today's weight to 264.8 lb\").</em></p>";
+            setNotice("chat-notice", "No pending check-in items for today.", "ok");
+            return;
+          }
+          dailyCheckin.active = true;
+          dailyCheckin.index = 0;
+          dailyCheckin.logDate = logDate;
+          dailyCheckin.payload = hydratedPayload;
+          dailyCheckin.metricPayloads = [];
+          dailyCheckin.extras = hydrated.extras || {};
+          dailyCheckin.answers = hydrated.answers || {};
+          dailyCheckin.evidence = evidence;
+          dailyCheckin.profile = profile;
+          dailyCheckin.timeBucket = plan.timeBucket || "morning";
+          dailyCheckin.intro = plan.intro || "";
+          dailyCheckin.latestSummaryMarkdown = "";
+          dailyCheckin.steps = pendingSteps;
+          el("chat-question").value = "";
+          el("chat-question").focus();
+          el("chat-daily-cancel").style.display = "inline-block";
+          const starter = profile.primaryGoal
+            ? ("Check-in started for your goal: " + profile.primaryGoal + ".")
+            : "Check-in started.";
+          let resumeNote = "";
+          if (existingLog) {
+            const completed = [];
+            const pending = [];
+            const labelByKey = Object.fromEntries((Array.isArray(plan.steps) ? plan.steps : []).map((s) => [s.key, s.label || s.key]));
+            Object.keys(labelByKey).forEach((k) => {
+              if (DAILY_PAYLOAD_KEYS.has(k)) {
+                (hasValue(hydratedPayload[k]) ? completed : pending).push(String(labelByKey[k]));
+              }
+            });
+            if (evidence.weigh_in_done) completed.push(String(labelByKey.weigh_in_done || "Weigh-In Done"));
+            if (evidence.bp_checked) completed.push(String(labelByKey.bp_checked || "BP Checked"));
+            if (evidence.hr_checked) completed.push(String(labelByKey.hr_checked || "HR Checked"));
+            if (completed.length || pending.length) {
+              resumeNote = " Resuming from today's check-in."
+                + (completed.length ? (" Completed: " + completed.join(", ") + ".") : "")
+                + (pending.length ? (" Pending: " + pending.join(", ") + ".") : "");
+            } else {
+              resumeNote = " Resuming from today's existing check-in; asking only pending items.";
+            }
+          }
+          renderDailyCheckinPrompt("Answer in the chat box and press Send.");
+          setNotice("chat-notice", starter + resumeNote + (dailyCheckin.intro ? (" " + dailyCheckin.intro) : ""), "ok");
+        } finally {
+          setBusy("checkin", false);
+        }
       }
 
       async function submitDailyCheckin() {
+        const payloadWithDynamic = {
+          ...dailyCheckin.payload,
+          checkin_payload_json: {
+            payload: dailyCheckin.payload || {},
+            extras: dailyCheckin.extras || {},
+            answers: dailyCheckin.answers || {},
+            evidence: dailyCheckin.evidence || {},
+            time_bucket: dailyCheckin.timeBucket || "",
+            updated_at_local: new Date().toISOString(),
+          },
+        };
         const res = await fetch("/daily-log/" + dailyCheckin.logDate, {
           method: "PUT",
           headers: authHeaders(),
-          body: JSON.stringify(dailyCheckin.payload),
+          body: JSON.stringify(payloadWithDynamic),
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          setNotice("chat-notice", body.detail || "Could not save daily check-in.", "error");
+          setNotice("chat-notice", body.detail || "Could not save check-in.", "error");
           return;
         }
         for (const metric of dailyCheckin.metricPayloads) {
@@ -1028,25 +1909,59 @@
           });
         }
         dailyCheckin.active = false;
+        el("chat-daily-cancel").style.display = "none";
         const out = el("chat-answer");
         out.style.display = "block";
-        out.innerHTML = "<h3>Daily Check-In Saved</h3>"
-          + "<p>Your daily log for " + dailyCheckin.logDate + " is saved.</p>"
+        out.innerHTML = "<h3>Check-In Saved</h3>"
+          + "<p>Your check-in for " + dailyCheckin.logDate + " is saved.</p>"
           + "<p><em>Now ask any coaching question, and I will use this new daily signal.</em></p>";
-        setNotice("chat-notice", "Daily check-in complete.", "ok");
+        setNotice("chat-notice", "Check-in complete.", "ok");
       }
 
       async function handleDailyCheckinTurn(userInput) {
+        if (isCancelDailyCheckinInput(userInput)) {
+          cancelDailyCheckin("Check-in canceled. You can restart anytime.");
+          return;
+        }
+        dailyCheckin.latestSummaryMarkdown = "";
         const step = currentDailyStep();
         if (!step) return;
         let parsed;
+        let parseMeta = null;
+        let loggedNutritionFromReply = false;
         try {
           parsed = parseDailyCheckinValue(step, userInput);
         } catch (err) {
-          setNotice("chat-notice", err.message || "Invalid answer.", "error");
-          renderDailyCheckinPrompt("Please try that step again.");
-          return;
+          if (step.type === "bool") {
+            try {
+              parseMeta = await parseDailyCheckinBoolWithUtility(step, userInput);
+              if (parseMeta && (parseMeta.parsed_bool === true || parseMeta.parsed_bool === false)) {
+                parsed = parseMeta.parsed_bool;
+              } else {
+                throw new Error("Please answer clearly, and include details if you want them logged.");
+              }
+            } catch (parseErr) {
+              setNotice("chat-notice", parseErr.message || err.message || "Invalid answer.", "error");
+              renderDailyCheckinPrompt("Please try that step again.");
+              return;
+            }
+          } else {
+            setNotice("chat-notice", err.message || "Invalid answer.", "error");
+            renderDailyCheckinPrompt("Please try that step again.");
+            return;
+          }
         }
+        if (step.type === "bool" && parseMeta && parseMeta.captured_text) {
+          dailyCheckin.extras[step.key + "_details"] = String(parseMeta.captured_text).slice(0, 600);
+        }
+        dailyCheckin.answers[step.key] = {
+          specialist: String(step.specialist || "Coach"),
+          question: String(step.question || ""),
+          raw_answer: String(userInput || ""),
+          parsed_value: parsed,
+          captured_text: (parseMeta && parseMeta.captured_text) ? String(parseMeta.captured_text).slice(0, 600) : null,
+          at_local: new Date().toISOString(),
+        };
         if (step.key === "tracked_signals") {
           const chosen = Array.isArray(parsed) ? parsed : [];
           const optionalSteps = chosen
@@ -1065,12 +1980,61 @@
           dailyCheckin.metricPayloads.push({ metric_type: "bp_systolic", value: parsed.systolic });
           dailyCheckin.metricPayloads.push({ metric_type: "bp_diastolic", value: parsed.diastolic });
           dailyCheckin.extras.bp = parsed.systolic + "/" + parsed.diastolic;
+        } else if (step.key === "resting_hr_bpm") {
+          dailyCheckin.metricPayloads.push({ metric_type: "resting_hr_bpm", value: Number(parsed) });
+          dailyCheckin.extras.resting_hr_bpm = Number(parsed);
         } else if (step.key === "sleep_timing") {
           dailyCheckin.extras.sleep_timing = parsed;
         } else if (step.key === "last_meal") {
           dailyCheckin.extras.last_meal = parsed;
+        } else if (step.key === "nutrition_log_choice") {
+          if (parsed === "now") {
+            const exists = dailyCheckin.steps.some((s, idx) => idx > dailyCheckin.index && s.key === "nutrition_food_details");
+            if (!exists) {
+              dailyCheckin.steps.splice(dailyCheckin.index + 1, 0, DAILY_NUTRITION_LOG_DETAILS_STEP);
+            }
+          } else {
+            dailyCheckin.extras.nutrition_log_later = "yes";
+          }
+        } else if (step.key === "nutrition_food_details") {
+          dailyCheckin.extras.nutrition_food_details = parsed;
+          // User chose to log now and provided details, so mark this as logged.
+          dailyCheckin.payload.nutrition_on_plan = true;
+          const rich = await buildDailyFoodLogSummary(String(parsed));
+          if (rich) {
+            dailyCheckin.latestSummaryMarkdown = rich;
+          }
         } else {
-          dailyCheckin.payload[step.key] = parsed;
+          if (DAILY_PAYLOAD_KEYS.has(step.key)) {
+            dailyCheckin.payload[step.key] = parsed;
+          } else {
+            dailyCheckin.extras[step.key] = parsed;
+          }
+        }
+        if (step.key === "nutrition_on_plan" && parseMeta && parseMeta.captured_text) {
+          dailyCheckin.extras.nutrition_food_details = String(parseMeta.captured_text).slice(0, 600);
+          const rich = await buildDailyFoodLogSummary(String(parseMeta.captured_text));
+          if (rich) {
+            dailyCheckin.latestSummaryMarkdown = rich;
+          }
+          if (parsed === false) {
+            // User replied "no" but still provided intake details; capture it as logged now.
+            dailyCheckin.payload.nutrition_on_plan = true;
+            loggedNutritionFromReply = true;
+            dailyCheckin.extras.nutrition_logged_via_reply = "yes";
+          }
+        }
+        if (step.key === "nutrition_on_plan" && parsed === false && !loggedNutritionFromReply) {
+          const exists = dailyCheckin.steps.some((s, idx) => idx > dailyCheckin.index && s.key === "nutrition_log_choice");
+          if (!exists) {
+            dailyCheckin.steps.splice(dailyCheckin.index + 1, 0, DAILY_NUTRITION_LOG_CHOICE_STEP);
+          }
+        }
+        if (!dailyCheckin.latestSummaryMarkdown) {
+          const stepSummary = await buildDailyStepSummary(step, userInput, parsed);
+          if (stepSummary) {
+            dailyCheckin.latestSummaryMarkdown = stepSummary;
+          }
         }
         dailyCheckin.index += 1;
         el("chat-question").value = "";
@@ -1080,6 +2044,12 @@
           if (dailyCheckin.extras.bp) extraBits.push("bp: " + dailyCheckin.extras.bp);
           if (dailyCheckin.extras.sleep_timing) extraBits.push("sleep timing: " + dailyCheckin.extras.sleep_timing);
           if (dailyCheckin.extras.last_meal) extraBits.push("last meal: " + dailyCheckin.extras.last_meal);
+          Object.keys(dailyCheckin.extras).forEach((k) => {
+            if (["weight_kg", "bp", "sleep_timing", "last_meal"].includes(k)) return;
+            const v = dailyCheckin.extras[k];
+            if (v == null || v === "") return;
+            extraBits.push(k.replace(/_/g, " ") + ": " + String(v));
+          });
           if (extraBits.length) {
             const currentNotes = dailyCheckin.payload.notes ? String(dailyCheckin.payload.notes) + " | " : "";
             dailyCheckin.payload.notes = (currentNotes + extraBits.join("; ")).slice(0, 1200);
@@ -1202,6 +2172,7 @@
           return;
         }
         const body = await res.json();
+        intakePrimaryGoal = String(body.primary_goal || "");
         if (body.baseline_completed) {
           el("intake-badge").textContent = "completed";
           el("intake-badge").className = "status ok";
@@ -1229,20 +2200,25 @@
           ? topGoalsRaw.split(",").map((g) => g.trim()).filter((g) => g).slice(0, 3)
           : [];
         setNotice("intake-notice", "Starting intake coach...", "");
-        const res = await fetch("/intake/conversation/start", {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({ top_goals: goals.length ? goals : null })
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          setNotice("intake-notice", body.detail || "Could not start intake coach.", "error");
-          return;
+        setBusy("intake", true, "Starting...");
+        try {
+          const res = await fetch("/intake/conversation/start", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({ top_goals: goals.length ? goals : null })
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            setNotice("intake-notice", body.detail || "Could not start intake coach.", "error");
+            return;
+          }
+          el("intake-chat-log").innerHTML = "";
+          intakeChat.length = 0;
+          renderCoachState(await res.json());
+          setNotice("intake-notice", "Coach started. Answer one or more requested items, then send.", "ok");
+        } finally {
+          setBusy("intake", false);
         }
-        el("intake-chat-log").innerHTML = "";
-        intakeChat.length = 0;
-        renderCoachState(await res.json());
-        setNotice("intake-notice", "Coach started. Answer the current question.", "ok");
       }
 
       async function sendIntakeAnswer() {
@@ -1257,19 +2233,30 @@
         }
         addIntakeChatMessage("user", answer);
         setNotice("intake-notice", "Sending answer...", "");
-        const res = await fetch("/intake/conversation/answer", {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({ session_id: intakeState.sessionId, answer })
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          setNotice("intake-notice", body.detail || "Could not submit answer.", "error");
-          return;
+        setBusy("intake", true, "Sending...");
+        try {
+          const res = await fetch("/intake/conversation/answer", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({ session_id: intakeState.sessionId, answer })
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            setNotice("intake-notice", body.detail || "Could not submit answer.", "error");
+            return;
+          }
+          el("intake-answer").value = "";
+          renderCoachState(await res.json());
+          setNotice(
+            "intake-notice",
+            intakeState.readyToComplete
+              ? "Ready to finalize intake."
+              : "Answer recorded. Next intake batch loaded.",
+            "ok"
+          );
+        } finally {
+          setBusy("intake", false);
         }
-        el("intake-answer").value = "";
-        renderCoachState(await res.json());
-        setNotice("intake-notice", intakeState.readyToComplete ? "Ready to finalize intake." : "Answer recorded. Next question loaded.", "ok");
       }
 
       async function finalizeIntakeConversation() {
@@ -1278,25 +2265,47 @@
           return;
         }
         setNotice("intake-notice", "Finalizing intake...", "");
-        const res = await fetch("/intake/conversation/complete", {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({ session_id: intakeState.sessionId })
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          setNotice("intake-notice", body.detail || "Could not finalize intake.", "error");
-          return;
+        setBusy("intake", true, "Finalizing...");
+        try {
+          const res = await fetch("/intake/conversation/complete", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({ session_id: intakeState.sessionId })
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            setNotice("intake-notice", body.detail || "Could not finalize intake.", "error");
+            return;
+          }
+          intakeState.readyToComplete = false;
+          el("intake-complete").style.display = "none";
+          setNotice("intake-notice", "Intake complete. Redirecting to default chat.", "ok");
+          await loadIntakeStatus();
+          showView("chat");
+        } finally {
+          setBusy("intake", false);
         }
-        intakeState.readyToComplete = false;
-        el("intake-complete").style.display = "none";
-        setNotice("intake-notice", "Intake complete. Redirecting to default chat.", "ok");
-        await loadIntakeStatus();
-        showView("chat");
       }
 
       async function sendChat() {
         const question = el("chat-question").value.trim();
+        if (dailyCheckin.active) {
+          if (selectedChatImage) {
+            setNotice("chat-notice", "Finish or cancel the current check-in before uploading an image.", "warn");
+            return;
+          }
+          if (!question) {
+            setNotice("chat-notice", "Enter your check-in answer, or type 'cancel' to stop.", "error");
+            return;
+          }
+          setBusy("chat", true, "Working...");
+          try {
+            await handleDailyCheckinTurn(question);
+          } finally {
+            setBusy("chat", false);
+          }
+          return;
+        }
         const hasImage = !!selectedChatImage;
         if (hasImage) {
           await sendImageChat(question);
@@ -1306,63 +2315,75 @@
           setNotice("chat-notice", "Enter a question first.", "error");
           return;
         }
-        if (dailyCheckin.active) {
-          await handleDailyCheckinTurn(question);
-          return;
-        }
         const resolved = resolveChatMode(question);
-        const stageMessages = [
-          "Reviewing your goals and recent context...",
-          "Running specialist coaching agents...",
-          "Synthesizing a final coaching response..."
-        ];
+        const webSearchEnabled = isWebSearchEnabled();
+        const plan = buildAgentProgressPlan(question, resolved);
+        const stageMessages = (webSearchEnabled
+          ? ["Researching current web evidence..."]
+          : []).concat(plan.map((p) => p.label + ": working..."));
+        const done = [];
         let stageIdx = 0;
+        setBusy("chat", true, "Working...");
         setNotice("chat-notice", stageMessages[stageIdx], "");
+        renderAgentStatus(plan, plan[stageIdx] ? plan[stageIdx].id : null, done);
         const noticeTimer = setInterval(() => {
+          if (plan[stageIdx]) done.push(plan[stageIdx].id);
           stageIdx = (stageIdx + 1) % stageMessages.length;
           setNotice("chat-notice", stageMessages[stageIdx], "");
+          renderAgentStatus(plan, plan[stageIdx] ? plan[stageIdx].id : null, done);
         }, 1300);
-        const res = await fetch("/coach/question", {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({
-            question,
-            mode: resolved.mode,
-            deep_think: resolved.deepThink
-          })
-        });
-        clearInterval(noticeTimer);
-        if (!res.ok) {
-          setNotice("chat-notice", "Chat request failed.", "error");
-          return;
-        }
-        const body = await res.json();
-        el("chat-question").value = "";
-        const out = el("chat-answer");
-        out.style.display = "block";
-        out.innerHTML = "<h3>Answer</h3>" + renderSimpleMarkdown(body.answer || "")
-          + "<strong>Coach Follow-up Questions (Please answer next)</strong><ul>" + (body.suggested_questions || []).map((q) => "<li>" + q + "</li>").join("") + "</ul>"
-          + "<p><em>Reply with your answers in your next message so guidance can be tailored and recorded.</em></p>";
-        const flags = Array.isArray(body.safety_flags) ? body.safety_flags : [];
-        const llmFailure = flags.some((f) => String(f).startsWith("llm_"));
-        if (llmFailure) {
-          if (flags.includes("llm_rate_limited")) {
-            setNotice("chat-notice", "AI provider rate limit/quota reached. Returned practical fallback guidance.", "warn");
-          } else if (flags.includes("llm_unavailable") || flags.includes("llm_provider_error")) {
-            setNotice("chat-notice", "AI service timed out or is temporarily unavailable. Returned practical fallback guidance.", "warn");
-          } else if (flags.includes("llm_auth_error") || flags.includes("llm_model_not_found")) {
-            setNotice("chat-notice", "AI configuration issue detected. Check Settings and model selection.", "error");
-          } else {
-            setNotice("chat-notice", "AI provider/model error. Check Settings (provider, key, and model selections).", "error");
+        try {
+          const res = await fetch("/coach/question", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              question,
+              mode: resolved.mode,
+              deep_think: resolved.deepThink,
+              thread_id: chatState.currentThreadId,
+              web_search: webSearchEnabled,
+            })
+          });
+          if (!res.ok) {
+            let detail = "";
+            try {
+              const errBody = await res.json();
+              if (errBody && typeof errBody === "object") {
+                if (typeof errBody.detail === "string" && errBody.detail.trim()) {
+                  detail = errBody.detail.trim();
+                } else if (Array.isArray(errBody.detail) && errBody.detail.length) {
+                  detail = String(errBody.detail[0]?.msg || errBody.detail[0] || "").trim();
+                }
+              }
+            } catch (_) {
+              detail = "";
+            }
+            if (res.status === 401) {
+              setNotice("chat-notice", "Chat request failed: session expired. Please sign in again.", "error");
+            } else {
+              setNotice(
+                "chat-notice",
+                detail ? ("Chat request failed: " + detail) : ("Chat request failed (" + res.status + ")."),
+                "error"
+              );
+            }
+            return;
           }
-        } else {
-          setNotice("chat-notice", "Response ready (" + resolved.label + " mode).", "ok");
+          const body = await res.json();
+          el("chat-question").value = "";
+          await renderChatCoachResponse(body, resolved, question, plan);
+        } catch (err) {
+          const message = (err && err.message) ? err.message : "Network error";
+          setNotice("chat-notice", "Chat request failed: " + message, "error");
+        } finally {
+          clearInterval(noticeTimer);
+          setBusy("chat", false);
         }
       }
 
       async function sendImageChat(questionText) {
         if (dailyCheckin.active) {
-          setNotice("chat-notice", "Finish current daily check-in before uploading an image.", "warn");
+          setNotice("chat-notice", "Finish current check-in before uploading an image.", "warn");
           return;
         }
         if (!selectedChatImage) {
@@ -1370,35 +2391,76 @@
           return;
         }
         const resolved = resolveChatMode(questionText || "image analysis");
+        const webSearchEnabled = isWebSearchEnabled();
         const form = new FormData();
         form.append("image", selectedChatImage);
         form.append("question", String(questionText || ""));
         form.append("mode", resolved.mode);
         form.append("deep_think", String(!!resolved.deepThink));
-        setNotice("chat-notice", "Analyzing image with coach...", "");
-        const res = await fetch("/coach/image", {
-          method: "POST",
-          headers: { "Authorization": "Bearer " + token },
-          body: form,
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          setNotice("chat-notice", body.detail || "Image request failed.", "error");
-          return;
+        form.append("web_search", String(webSearchEnabled));
+        if (chatState.currentThreadId) {
+          form.append("thread_id", String(chatState.currentThreadId));
         }
-        const body = await res.json();
-        selectedChatImage = null;
-        el("chat-image-file").value = "";
-        el("chat-question").value = "";
-        renderChatCoachResponse(body, resolved);
+        setBusy("chat", true, "Analyzing...");
+        setNotice("chat-notice", "Analyzing image with coach...", "");
+        try {
+          const res = await fetch("/coach/image", {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + token },
+            body: form,
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            setNotice("chat-notice", body.detail || "Image request failed.", "error");
+            return;
+          }
+          const body = await res.json();
+          selectedChatImage = null;
+          el("chat-image-file").value = "";
+          el("chat-question").value = "";
+          await renderChatCoachResponse(body, resolved, "[Image] " + (questionText || "Analyze upload"), []);
+        } finally {
+          setBusy("chat", false);
+        }
       }
 
-      function renderChatCoachResponse(body, resolved) {
+      async function renderChatCoachResponse(body, resolved, userPrompt, plan) {
         const out = el("chat-answer");
-        out.style.display = "block";
-        out.innerHTML = "<h3>Answer</h3>" + renderSimpleMarkdown(body.answer || "")
-          + "<strong>Coach Follow-up Questions (Please answer next)</strong><ul>" + (body.suggested_questions || []).map((q) => "<li>" + q + "</li>").join("") + "</ul>"
-          + "<p><em>Reply with your answers in your next message so guidance can be tailored and recorded.</em></p>";
+        out.style.display = "none";
+        out.innerHTML = "";
+        if (userPrompt) {
+          chatState.messages.push({ role: "user", content: userPrompt });
+        }
+        chatState.messages.push({ role: "assistant", content: body.answer || "" });
+        renderChatLog();
+        chatState.currentThreadId = body.thread_id || chatState.currentThreadId;
+        await loadChatThreads();
+        const trace = Array.isArray(body.agent_trace) ? body.agent_trace : [];
+        if (trace.length) {
+          const ids = trace.map((x) => String(x.agent_id || "")).filter(Boolean);
+          const labelsById = {};
+          trace.forEach((x) => {
+            const id = String(x.agent_id || "");
+            if (!id) return;
+            labelsById[id] = String(x.agent_title || id);
+          });
+          const mergedPlan = [];
+          const pushUnique = (id, label) => {
+            if (!id) return;
+            if (mergedPlan.some((node) => node.id === id)) return;
+            mergedPlan.push({ id, label });
+          };
+          (Array.isArray(plan) ? plan : []).forEach((node) => {
+            pushUnique(String(node.id || ""), String(node.label || node.id || ""));
+          });
+          ids.forEach((id) => {
+            pushUnique(id, labelsById[id] || id);
+          });
+          renderAgentStatus(mergedPlan, null, ids);
+        } else if (Array.isArray(plan) && plan.length) {
+          const ids = plan.map((x) => x.id);
+          renderAgentStatus(plan, null, ids);
+        }
         const flags = Array.isArray(body.safety_flags) ? body.safety_flags : [];
         const llmFailure = flags.some((f) => String(f).startsWith("llm_"));
         if (llmFailure) {
@@ -1423,28 +2485,128 @@
           return;
         }
         const resolved = resolveChatMode(text);
+        const webSearchEnabled = isWebSearchEnabled();
+        setBusy("chat", true, "Sending...");
         setNotice("chat-notice", "Sending voice transcript...", "");
-        const res = await fetch("/coach/voice", {
+        try {
+          const res = await fetch("/coach/voice", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              transcript: text,
+              mode: resolved.mode,
+              deep_think: resolved.deepThink,
+              thread_id: chatState.currentThreadId,
+              web_search: webSearchEnabled,
+            })
+          });
+          if (!res.ok) {
+            setNotice("chat-notice", "Voice request failed.", "error");
+            return;
+          }
+          const body = await res.json();
+          el("chat-question").value = "";
+          await renderChatCoachResponse(body, resolved, text, []);
+        } finally {
+          setBusy("chat", false);
+        }
+      }
+
+      async function fetchOverallSummarySafe() {
+        const res = await fetch("/summary/overall", { headers: { "Authorization": "Bearer " + token } });
+        if (!res.ok) return null;
+        return await res.json();
+      }
+
+      async function fetchBaselineSafe() {
+        const res = await fetch("/intake/baseline", { headers: { "Authorization": "Bearer " + token } });
+        if (!res.ok) return null;
+        return await res.json();
+      }
+
+      async function fetchProactiveCard(cardType) {
+        const res = await fetch("/coach/proactive-card", {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify({
-            transcript: text,
-            mode: resolved.mode,
-            deep_think: resolved.deepThink
-          })
+          body: JSON.stringify({ card_type: cardType }),
         });
-        if (!res.ok) {
-          setNotice("chat-notice", "Voice request failed.", "error");
+        if (!res.ok) return null;
+        return await res.json().catch(() => null);
+      }
+
+      function doneMark(done) {
+        return done ? "[x]" : "[ ]";
+      }
+
+      function pushChatAssistantMarkdown(userPrompt, assistantMarkdown) {
+        if (userPrompt) chatState.messages.push({ role: "user", content: userPrompt });
+        chatState.messages.push({ role: "assistant", content: assistantMarkdown || "" });
+        renderChatLog();
+      }
+
+      async function showDailySummaryCard() {
+        if (dailyCheckin.active) {
+          setNotice("chat-notice", "Finish or cancel current check-in first.", "warn");
           return;
         }
-        const body = await res.json();
-        el("chat-question").value = "";
-        renderChatCoachResponse(body, resolved);
+        setBusy("chat", true, "Working...");
+        setNotice("chat-notice", "Building daily summary...", "");
+        try {
+          const card = await fetchProactiveCard("daily_summary");
+          if (!card || !card.markdown) {
+            setNotice("chat-notice", "Could not load daily summary.", "error");
+            return;
+          }
+          pushChatAssistantMarkdown("Daily Summary", String(card.markdown || ""));
+          setNotice("chat-notice", "Daily summary ready.", "ok");
+        } finally {
+          setBusy("chat", false);
+        }
+      }
+
+      async function showDailyPlanCard() {
+        if (dailyCheckin.active) {
+          setNotice("chat-notice", "Finish or cancel current check-in first.", "warn");
+          return;
+        }
+        setBusy("chat", true, "Working...");
+        setNotice("chat-notice", "Building daily plan...", "");
+        try {
+          const card = await fetchProactiveCard("daily_plan");
+          if (!card || !card.markdown) {
+            setNotice("chat-notice", "Could not load daily plan.", "error");
+            return;
+          }
+          pushChatAssistantMarkdown("Daily Plan", String(card.markdown || ""));
+          setNotice("chat-notice", "Daily plan ready.", "ok");
+        } finally {
+          setBusy("chat", false);
+        }
+      }
+
+      async function showWhatNextCard() {
+        if (dailyCheckin.active) {
+          setNotice("chat-notice", "Finish or cancel current check-in first.", "warn");
+          return;
+        }
+        setBusy("chat", true, "Working...");
+        setNotice("chat-notice", "Building next-step guidance...", "");
+        try {
+          const card = await fetchProactiveCard("what_next");
+          if (!card || !card.markdown) {
+            setNotice("chat-notice", "Could not load next-step guidance.", "error");
+            return;
+          }
+          pushChatAssistantMarkdown("What Next", String(card.markdown || ""));
+          setNotice("chat-notice", "What-next guidance ready.", "ok");
+        } finally {
+          setBusy("chat", false);
+        }
       }
 
       function startVoiceInput() {
         if (dailyCheckin.active) {
-          setNotice("chat-notice", "Finish current daily check-in before using voice.", "warn");
+          setNotice("chat-notice", "Finish current check-in before using voice.", "warn");
           return;
         }
         if (voiceListening) return;
@@ -1513,6 +2675,81 @@
         setNotice("password-notice", body.detail || "Password update failed.", "error");
       }
 
+      async function loadNotificationSettings() {
+        const res = await fetch("/auth/notification-settings", {
+          headers: { "Authorization": "Bearer " + token }
+        });
+        if (!res.ok) {
+          setNotice("notify-notice", "Could not load reminder settings.", "error");
+          return;
+        }
+        const body = await res.json();
+        reminderState.enabled = !!body.enabled;
+        reminderState.intervalMinutes = Number(body.interval_minutes || 120);
+        reminderState.title = String(body.reminder_title || reminderState.title);
+        reminderState.body = String(body.reminder_body || reminderState.body);
+        el("notify-enabled").value = reminderState.enabled ? "on" : "off";
+        el("notify-interval").value = String(reminderState.intervalMinutes);
+        scheduleReminderTimer();
+      }
+
+      async function saveNotificationSettings() {
+        const enabled = el("notify-enabled").value === "on";
+        const intervalRaw = Number(el("notify-interval").value || "120");
+        const interval = Number.isFinite(intervalRaw) ? Math.round(intervalRaw) : 120;
+        if (interval < 15 || interval > 1440) {
+          setNotice("notify-notice", "Interval must be between 15 and 1440 minutes.", "error");
+          return;
+        }
+        const res = await fetch("/auth/notification-settings", {
+          method: "PUT",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            enabled,
+            interval_minutes: interval
+          })
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("notify-notice", body.detail || "Could not save reminder settings.", "error");
+          return;
+        }
+        const body = await res.json();
+        reminderState.enabled = !!body.enabled;
+        reminderState.intervalMinutes = Number(body.interval_minutes || 120);
+        reminderState.title = String(body.reminder_title || reminderState.title);
+        reminderState.body = String(body.reminder_body || reminderState.body);
+        scheduleReminderTimer();
+        setNotice("notify-notice", "Reminder settings saved.", "ok");
+      }
+
+      async function requestNotificationPermission() {
+        if (!notificationSupported()) {
+          setNotice("notify-notice", "This browser does not support notifications.", "warn");
+          return;
+        }
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          scheduleReminderTimer();
+          setNotice("notify-notice", "Browser notification permission granted.", "ok");
+        } else {
+          setNotice("notify-notice", "Notification permission was not granted.", "warn");
+        }
+      }
+
+      function sendTestNotification() {
+        if (!notificationSupported()) {
+          setNotice("notify-notice", "This browser does not support notifications.", "warn");
+          return;
+        }
+        if (Notification.permission !== "granted") {
+          setNotice("notify-notice", "Grant browser notification permission first.", "warn");
+          return;
+        }
+        showReminderNotification();
+        setNotice("notify-notice", "Test reminder sent.", "ok");
+      }
+
       async function resetModelUsage() {
         const ok = window.confirm("Reset model usage stats for this account only?");
         if (!ok) return;
@@ -1528,6 +2765,27 @@
         }
         const body = await res.json().catch(() => ({}));
         setNotice("reset-notice", "Model stats reset. Rows removed: " + (body.deleted_rows ?? 0) + ".", "ok");
+        await loadUsage();
+      }
+
+      async function resetDailyData() {
+        const ok = window.confirm(
+          "Clear daily logs, metrics, scores, and conversation summaries for this account only? Intake baseline will be kept."
+        );
+        if (!ok) return;
+        setNotice("reset-notice", "Clearing daily data...", "");
+        const res = await fetch("/auth/daily-data", {
+          method: "DELETE",
+          headers: { "Authorization": "Bearer " + token }
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setNotice("reset-notice", body.detail || "Could not clear daily data.", "error");
+          return;
+        }
+        const body = await res.json().catch(() => ({}));
+        setNotice("reset-notice", "Daily data cleared. Rows removed: " + (body.deleted_rows ?? 0) + ".", "ok");
+        await loadSummary();
         await loadUsage();
       }
 
@@ -1549,6 +2807,8 @@
         const body = await res.json().catch(() => ({}));
         setNotice("reset-notice", "User data reinitialized. Rows removed: " + (body.deleted_rows ?? 0) + ".", "ok");
         await loadIntakeStatus();
+        startNewChat();
+        await loadChatThreads();
         showView("chat");
       }
 
@@ -1706,7 +2966,7 @@
         setNotice("summary-notice", "Summary updated.", "ok");
       }
 
-      el("menu-chat").addEventListener("click", () => showView("chat"));
+      el("menu-chat").addEventListener("click", async () => { showView("chat"); await loadChatThreads(); renderChatLog(); });
       el("menu-summary").addEventListener("click", async () => { showView("summary"); await loadOverallSummary(); });
       el("menu-intake").addEventListener("click", () => showView("intake"));
       el("menu-settings").addEventListener("click", () => showView("settings"));
@@ -1714,6 +2974,13 @@
       el("menu-feedback").addEventListener("click", () => showView("feedback"));
       el("logout").addEventListener("click", () => { sessionStorage.removeItem("access_token"); window.location.href = "/onboarding"; });
       el("chat-send").addEventListener("click", sendChat);
+      el("chat-daily-summary").addEventListener("click", async () => { await showDailySummaryCard(); });
+      el("chat-daily-plan").addEventListener("click", async () => { await showDailyPlanCard(); });
+      el("chat-what-next").addEventListener("click", async () => { await showWhatNextCard(); });
+      el("chat-new-thread").addEventListener("click", startNewChat);
+      el("chat-refresh-threads").addEventListener("click", loadChatThreads);
+      el("chat-history-hide").addEventListener("click", toggleHistoryCollapsed);
+      el("chat-history-show").addEventListener("click", toggleHistoryCollapsed);
       el("chat-voice").addEventListener("click", startVoiceInput);
       el("chat-image").addEventListener("click", openImagePicker);
       el("chat-image-file").addEventListener("change", onImageSelected);
@@ -1724,6 +2991,7 @@
         setNotice("chat-notice", "", "");
       });
       el("chat-daily-start").addEventListener("click", async () => { await startDailyCheckin(); });
+      el("chat-daily-cancel").addEventListener("click", () => { cancelDailyCheckin("Check-in canceled by user."); });
       el("chat-mode-button").addEventListener("click", (event) => {
         event.preventDefault();
         toggleModePanel();
@@ -1740,11 +3008,16 @@
       el("intake-answer-send").addEventListener("click", sendIntakeAnswer);
       el("intake-complete").addEventListener("click", finalizeIntakeConversation);
       el("intake-refresh").addEventListener("click", loadIntakeStatus);
+      el("intake-chat-expand").addEventListener("click", toggleIntakeChatExpanded);
       el("ai-load").addEventListener("click", loadAiConfig);
       el("provider").addEventListener("change", loadModelOptions);
       el("api-key").addEventListener("input", () => { if (el("api-key").value.trim().length > 7) loadModelOptions(); });
       el("ai-save").addEventListener("click", saveAiConfig);
       el("password-save").addEventListener("click", changePassword);
+      el("notify-save").addEventListener("click", saveNotificationSettings);
+      el("notify-permission").addEventListener("click", requestNotificationPermission);
+      el("notify-test").addEventListener("click", sendTestNotification);
+      el("reset-daily-data").addEventListener("click", resetDailyData);
       el("reset-user-data").addEventListener("click", resetUserData);
       el("reset-model-usage").addEventListener("click", resetModelUsage);
       el("usage-refresh").addEventListener("click", loadUsage);
@@ -1786,9 +3059,13 @@
 
       async function init() {
         applyModeSelection("auto");
+        initHistoryCollapsedState();
         await loadSession();
         await loadIntakeStatus();
         await loadAiConfig();
+        await loadNotificationSettings();
+        await loadChatThreads();
+        renderChatLog();
         if ((window.location.hash || "").toLowerCase() === "#intake") {
           showView("intake");
         }
@@ -1797,6 +3074,7 @@
     </script>
   </body>
 </html>
+
 
 
 

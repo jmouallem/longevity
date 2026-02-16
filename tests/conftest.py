@@ -22,6 +22,8 @@ class FakeScenario(str, Enum):
     MISSING_FIELDS = "MISSING_FIELDS"
     TIMEOUT = "TIMEOUT"
     REFUSAL = "REFUSAL"
+    NO_SCHEMA = "NO_SCHEMA"
+    MIXED_ROLLUP = "MIXED_ROLLUP"
 
 
 class FakeLLMClient:
@@ -33,7 +35,67 @@ class FakeLLMClient:
         raw = (self.fixture_dir / f"{name}.json").read_text(encoding="utf-8")
         return json.loads(raw)
 
-    def generate_json(self, db: Session, user_id: int, prompt: str, task_type: str = "reasoning") -> dict:
+    def generate_json(
+        self,
+        db: Session,
+        user_id: int,
+        prompt: str,
+        task_type: str = "reasoning",
+        allow_web_search: bool = False,
+        system_instruction: str = "",
+    ) -> dict:
+        _ = (allow_web_search, system_instruction)
+        try:
+            prompt_obj = json.loads(prompt) if isinstance(prompt, str) else {}
+        except Exception:
+            prompt_obj = {}
+        if (
+            isinstance(prompt_obj, dict)
+            and str(prompt_obj.get("task") or "").startswith("Parse a free-form user coaching update")
+        ):
+            if self.scenario == FakeScenario.NO_SCHEMA:
+                return {"answer": "Could not parse schema."}
+            if self.scenario == FakeScenario.MIXED_ROLLUP:
+                text = str(((prompt_obj.get("input") or {}).get("text")) or "")
+                return {
+                    "has_progress_update": True,
+                    "events": [],
+                    "rollup": {
+                        "nutrition_food_details": text,
+                        "meds_taken": text,
+                        "nutrition_on_plan": True,
+                    },
+                }
+            text = str(((prompt_obj.get("input") or {}).get("text")) or "").lower()
+            events = []
+            rollup: dict[str, object] = {}
+            if "pizza" in text:
+                events.append({"event_type": "food", "details": "2 slices chicken pizza", "quantity_text": "2 slices"})
+                rollup["nutrition_on_plan"] = True
+                rollup["nutrition_food_details"] = (
+                    "Breakfast: 2 slices chicken pizza. Lunch: 2 slices sourdough toast with peanut butter and banana."
+                )
+            if "water" in text:
+                events.append({"event_type": "hydration", "details": "water intake update"})
+                rollup["hydration_progress"] = "water intake update"
+            if "candesartan" in text:
+                events.append({"event_type": "medication", "details": "candesartan taken"})
+                rollup["meds_taken"] = "candesartan taken"
+            if "122/82" in text:
+                events.append({"event_type": "blood_pressure", "details": "122/82"})
+                rollup["bp_systolic"] = 122
+                rollup["bp_diastolic"] = 82
+            if "264.8" in text:
+                events.append({"event_type": "weight", "details": "264.8 lb", "value_num": 119.8, "value_unit": "kg"})
+                rollup["weight_kg"] = 119.8
+            if "hr 56" in text or "56hr" in text:
+                events.append({"event_type": "heart_rate", "details": "56 bpm"})
+                rollup["resting_hr_bpm"] = 56
+            return {
+                "has_progress_update": bool(events),
+                "events": events,
+                "rollup": rollup,
+            }
         if self.scenario == FakeScenario.OK_LUNCH_PLAN:
             return self._load_json("OK_LUNCH_PLAN")
         if self.scenario == FakeScenario.OK_TIRED_ANALYSIS:
@@ -69,6 +131,10 @@ class FakeLLMClient:
                 ],
                 "safety_flags": ["refusal"],
             }
+        if self.scenario == FakeScenario.NO_SCHEMA:
+            return self._load_json("OK_LUNCH_PLAN")
+        if self.scenario == FakeScenario.MIXED_ROLLUP:
+            return self._load_json("OK_LUNCH_PLAN")
         raise ValueError("Unknown fake scenario")
 
 

@@ -1,4 +1,5 @@
 import json
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -140,12 +141,45 @@ def build_coaching_context(db: Session, user_id: int) -> dict[str, Any]:
         "entries_7d": len(recent_daily_logs),
         "latest_log_date": (latest_daily_log.log_date.isoformat() if latest_daily_log else None),
     }
+    event_counts_7d: dict[str, int] = {}
+    recent_updates: list[dict[str, Any]] = []
+    for row in recent_daily_logs:
+        if not row.checkin_payload_json:
+            continue
+        try:
+            parsed_payload = json.loads(row.checkin_payload_json)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(parsed_payload, dict):
+            continue
+        events = parsed_payload.get("events") if isinstance(parsed_payload.get("events"), list) else []
+        for evt in events[-20:]:
+            if not isinstance(evt, dict):
+                continue
+            event_type = str(evt.get("event_type") or "").strip().lower()
+            details = str(evt.get("details") or "").strip()
+            if not event_type or not details:
+                continue
+            event_counts_7d[event_type] = int(event_counts_7d.get(event_type, 0)) + 1
+            recent_updates.append(
+                {
+                    "log_date": row.log_date.isoformat(),
+                    "event_type": event_type,
+                    "details": details[:220],
+                    "timestamp_text": (str(evt.get("timestamp_text")).strip()[:64] if evt.get("timestamp_text") else None),
+                }
+            )
+    structured_memory = {
+        "event_counts_7d": event_counts_7d,
+        "recent_updates": recent_updates[-24:],
+    }
 
     return {
         "baseline_present": baseline is not None,
         "baseline": baseline_summary,
         "metrics_7d_summary": metric_summary,
         "daily_log_summary": daily_log_summary,
+        "structured_memory": structured_memory,
         "latest_scores": score_summary,
         "missing_data": missing_data,
         "recent_conversations": recent_conversations,

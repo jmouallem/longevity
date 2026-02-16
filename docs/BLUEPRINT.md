@@ -90,6 +90,9 @@ POST /auth/model-options
 POST /feedback/entries
 GET  /feedback/entries/export
 DELETE /feedback/entries
+GET  /chat/threads
+POST /chat/threads
+GET  /chat/threads/{thread_id}/messages
 
 POST /intake/baseline
 GET  /intake/status
@@ -116,7 +119,14 @@ Internal behavior notes:
 - `/coach/image` must validate image type/size and return the same structured response contract.
 - Chat responses should preserve readable markdown formatting in `answer`.
 - Follow-up items should be direct coach questions for user reply.
+- Coach responses should include thread continuity metadata (`thread_id`) and agent trace metadata for UI transparency.
 - Feedback entries are shared across users in one table, exportable to CSV, and clearable from app settings/workspace.
+- Specialist hierarchy:
+  - Strategic layer: Goal Strategist (6-24 week targets/phases/pivots)
+  - Operational layer: Orchestrator (daily/weekly conflict resolution + weighted priorities)
+  - Specialist layer: Nutritionist, Sleep Expert, Movement Coach, Cardiometabolic Strategist, Supplement Auditor, Safety Clinician
+  - Optional contextual specialists: Behavior Architect, Recovery & Stress Regulator
+- Safety Clinician has veto authority over unsafe plans.
 
 ---
 
@@ -144,7 +154,7 @@ function coach_question(user_id, question):
 
 Cost-optimized runtime behavior:
 - Auto mode resolves to quick mode by default.
-- Quick mode runs constrained orchestration (risk/safety + synthesis).
+- Quick mode runs constrained orchestration (up to 3 selected specialists + synthesis).
 - Deep-think is explicit and routes to deep thinker profile.
 - Enforce per-task output token ceilings.
 - Apply short TTL duplicate-response cache for repeated identical questions.

@@ -107,13 +107,21 @@ This phase makes the product real.
 ### 1.3 Basic Coaching Endpoint
 - [ ] `/coach/question` endpoint
 - [ ] Load user state
-- [ ] Call LLM once (single agent mode) using authenticated user's provider/model config
+- [ ] Run specialist pipeline using authenticated user's provider/model config
 - [ ] Route utility sub-tasks (summarization/routing/extraction) to utility model profile
 - [ ] Return contextual response
 - [ ] Save conversation summary
 - [ ] Return readable markdown-style answer text for easy scanning
 - [ ] Present coach follow-up questions as user-response prompts (not user-suggested asks)
 - [ ] Provide practical fallback guidance when provider/model call fails
+- [ ] Persist chat thread/message history for continuity
+- [ ] Expose chat thread/message retrieval APIs for UI history panel
+- [ ] Show active specialist personality status while response is running
+- [ ] Include proactive success checkpoints and pivot triggers from history/trend context
+- [ ] Include Goal Strategist as strategic layer (6-24 week horizon)
+- [ ] Include Orchestrator as operational layer (daily/weekly execution + conflict resolution)
+- [ ] Enforce Safety Clinician veto authority
+- [ ] Keep quick-mode specialist fan-out bounded for cost
 
 ### 1.4 Simple Domain Scoring
 - [ ] Sleep score logic
@@ -143,11 +151,14 @@ User can sign up ? complete intake ? log metrics ? ask -what next?- ? see scores
 - [ ] Safety moderator pass
 
 ### 2.2 Domain Agents (MVP versions)
-- [ ] Nutrition agent
-- [ ] Sleep agent
-- [ ] Exercise agent
-- [ ] Metabolic agent
-- [ ] Safety agent
+- [ ] Goal Strategist
+- [ ] Nutritionist
+- [ ] Sleep Expert
+- [ ] Movement Coach
+- [ ] Cardiometabolic Strategist
+- [ ] Supplement Auditor
+- [ ] Safety Clinician
+- [ ] Orchestrator
 
 ### 2.3 Structured Agent Logging
 - [ ] Save agent outputs
@@ -326,7 +337,7 @@ Minimum viable -Longevity Alchemist-:
 - User authentication
 - Baseline intake
 - Metric logging
-- Single-agent contextual coaching
+- Specialist contextual coaching (Goal Strategist + Orchestrator + bounded specialist set)
 - Domain + composite scoring
 - Basic dashboard
 - Deployed to Render with persistent SQLite

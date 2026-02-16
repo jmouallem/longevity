@@ -36,6 +36,11 @@ def test_daily_log_upsert_and_list(client, auth_token) -> None:
         "training_done": True,
         "nutrition_on_plan": True,
         "notes": "Solid day",
+        "checkin_payload_json": {
+            "payload": {"sleep_hours": 7.4, "energy": 8},
+            "extras": {"hydration_progress": "4 cups"},
+            "answers": {"hydration_progress": {"raw_answer": "4 cups"}},
+        },
     }
     upsert = client.put(f"/daily-log/{today}", headers=headers, json=payload)
     assert upsert.status_code == 200
@@ -43,6 +48,7 @@ def test_daily_log_upsert_and_list(client, auth_token) -> None:
     assert body["log_date"] == today
     assert body["sleep_hours"] == payload["sleep_hours"]
     assert body["training_done"] is True
+    assert body["checkin_payload_json"]["extras"]["hydration_progress"] == "4 cups"
 
     payload["sleep_hours"] = 6.9
     payload["stress"] = 6

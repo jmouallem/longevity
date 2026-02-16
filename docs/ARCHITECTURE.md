@@ -67,7 +67,7 @@ Single Docker Container (Render Web Service)
 
 ### 3.6 Cost + Reliability Guardrails
 - Auto chat mode defaults to quick path for cost control.
-- Quick path uses minimal agent fan-out (safety/risk specialist + synthesis).
+- Quick path uses bounded specialist fan-out (up to 3 specialists + synthesis), selected by query relevance.
 - Deep-think remains explicit and user-invoked.
 - Per-task token budgets are enforced (utility < reasoning < deep-think).
 - Short TTL response cache deduplicates repeated identical submissions.
@@ -84,13 +84,19 @@ Responsibilities:
 - Onboarding UI
 - Main workspace UI with menu views (chat, intake, settings, usage)
 - Exactly one workspace view is visible at a time (active view contract)
+- Threaded chat history panel (new chat + prior thread selection)
 - Intake completion status indicator
 - Guided question prompts
 - Settings flows (AI config, password change, user-data reinitialize, model-usage reset)
+- Settings flows (AI config, password change, daily-data-only reset, user-data reinitialize, model-usage reset)
+- Settings reminder notification controls (enable/disable + interval + permission flow)
 - Shared feedback capture flow (feature/idea/bug), CSV export, and clear-all action
 - Chat progress feedback during multi-step reasoning (context, specialists, synthesis)
+- Visible agent/personality status chips during response generation
+- Per-question web-search toggle so specialists can optionally use current external evidence
 - Rendered answer formatting optimized for readable markdown-like output
 - Coach follow-up questions presented as questions for the user to answer next
+- Proactive guidance framing with checkpoints, measurable success markers, and pivot triggers derived from user history/trends
 
 Technology:
 - React or Next.js SPA
@@ -105,6 +111,7 @@ Responsibilities:
 - REST API endpoints
 - Data validation
 - AI orchestration
+- Chat thread/message persistence and retrieval endpoints
 - Intake status + baseline upsert endpoints
 - Settings endpoints (AI config, password change)
 - Settings reset endpoints (user-data reinitialize, model-usage reset)
@@ -118,31 +125,42 @@ Responsibilities:
 - Experiment lifecycle logic
 - LLM resilience logic (timeouts/retries/fallback path)
 - Cost guardrails (mode routing + token caps + duplicate-response cache)
+- Utility-model parsing pipeline for free-form user updates (food/hydration/meds/vitals/workouts/sleep)
+- Structured coaching memory ledger persisted in `daily_logs.checkin_payload_json` (`events`, `answers`, `extras`) for context-window-safe recall
 
 ---
 
 ### 4.3 AI Council Orchestrator
 
 Agents:
-- Cardio/Metabolic
-- Nutrition
-- Sleep
-- Exercise
-- Supplements
-- Behavioral
-- Data Trends
-- Safety Moderator
+- Goal Strategist
+- Nutritionist
+- Sleep Expert
+- Movement Coach
+- Supplement Auditor
+- Safety Clinician
+- Cardiometabolic Strategist
+- Behavior Architect (optional)
+- Recovery & Stress Regulator (optional)
+- Orchestrator
 
 Workflow:
 1. Gather structured user state
+1a. Parse incoming free-form progress updates with utility model into structured log events
 2. Segment into domain payloads
 3. Call LLM for each agent (or sequential reasoning blocks)
 4. Collect structured outputs
 5. Synthesize recommendations
 6. Wrap in persona tone
+7. Orchestrator applies priority weights and resolves conflicts between specialists
+8. Goal Strategist maintains 6-24 week targets/phases; Orchestrator executes daily/weekly tradeoffs against that strategy
+
+Memory Contract:
+- Agents must treat persisted structured logs as the source of truth for recent operational state.
+- Context includes short-memory digests (recent updates + 7-day event counts) to avoid reliance on long chat transcripts.
 
 Quick Mode Optimization:
-- Run a constrained pipeline by default (risk/safety + synthesis).
+- Run a constrained pipeline by default (Goal Strategist + selected specialists + Safety Clinician + synthesis, capped for cost).
 - Reserve deeper multi-agent paths for explicit deep-think use.
 
 ### 4.5 Model Catalog Service
@@ -163,6 +181,16 @@ Responsibilities:
 - Probe deeper where concern flags are detected
 - Extract and map answers into deterministic baseline fields
 - Produce concise intake summary and focus priorities without storing full transcript
+
+---
+
+### 4.7 Chat History Service
+
+Responsibilities:
+- Persist user/assistant turns into user-owned threads
+- Auto-create thread on first turn when no thread is selected
+- Return thread lists and message timelines for workspace rendering
+- Enforce strict per-user access isolation
 
 ---
 
